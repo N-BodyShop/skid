@@ -47,6 +47,8 @@ typedef struct pGroup {
 	float fMass;
 	float fRadius;
 	int nMembers;
+	int pStart;
+	int pCurr;
 	} PGROUP;
 
 typedef struct bndBound {
@@ -89,9 +91,9 @@ typedef struct kdContext {
 	KDN *kdNodes;
 	int nGroup;
 	int *piGroup;
-	KDN *kdGroup;
 	int uSecond;
 	int uMicro;
+	int bOutDiag;
 	} * KD;
 
 
@@ -332,7 +334,7 @@ typedef struct kdContext {
 
 
 void kdTime(KD,int *,int *);
-int kdInit(KD *,int,float *,float *);
+int kdInit(KD *,int,float *,float *,int);
 void kdSetSoft(KD,float);
 void kdSetUniverse(KD,float,float,float,float);
 int kdParticleType(KD,int);

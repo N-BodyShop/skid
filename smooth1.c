@@ -141,6 +141,8 @@ void smDensityInit(SMX smx,int bPeriodic)
 	int ix,iy,iz,j,ppi;
 	float fDist2;
 
+	if (smx->kd->bOutDiag) puts(">> smDensityInit()");
+	fflush(stdout);
 	p = smx->kd->pInit;
 	c = smx->kd->kdNodes;
 	nSmooth = smx->nSmooth;
@@ -328,6 +330,8 @@ void smDensityInit(SMX smx,int bPeriodic)
 				} /* of ix */
 			} /* of pi-loop */
 		}
+	if (smx->kd->bOutDiag) puts("<< smDensityInit()");
+	fflush(stdout);
 	}
 
 
@@ -410,6 +414,8 @@ int smAccDensity(SMX smx,int bInitial)
 	float ih2,fNorm,r2,rs;
 	float fScatDens;
 
+	if (smx->kd->bOutDiag) puts(">> smAccDensity()");
+	fflush(stdout);
 	/*
 	 ** Allocate Nearest-Neighbor list.
 	 */
@@ -504,6 +510,8 @@ int smAccDensity(SMX smx,int bInitial)
 									  smx->kd->nInitActive,fScatDens);
 	smx->nExtraScat = ScatterCut(smx->pp,smx->nExtraScat,fScatDens);
 	free(nnList);
+	if (smx->kd->bOutDiag) puts("<< smAccDensity()");
+	fflush(stdout);
 	return(smx->kd->nInitActive + smx->nExtraScat);
  	}
 

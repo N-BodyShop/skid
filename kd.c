@@ -27,7 +27,7 @@ void kdTime(KD kd,int *puSecond,int *puMicro)
 	}
 
 
-int kdInit(KD *pkd,int nBucket,float *fPeriod,float *fCenter)
+int kdInit(KD *pkd,int nBucket,float *fPeriod,float *fCenter,int bOutDiag)
 {
 	KD kd;
 	int j;
@@ -39,12 +39,29 @@ int kdInit(KD *pkd,int nBucket,float *fPeriod,float *fCenter)
 		kd->fPeriod[j] = fPeriod[j];
 		kd->fCenter[j] = fCenter[j];
 		}
+	kd->bOutDiag = bOutDiag;
+	kd->G = 1.0;
+	kd->Omega0 = 1.0;
+	kd->H0 = 0.0;
+	kd->z = 0.0;
+	kd->nParticles = 0;
+	kd->nDark = 0;
+	kd->nGas = 0;
+	kd->nStar = 0;
+	kd->inType = 0;
+	kd->fTime = 0.0;
+	kd->nLevels = 0;
+	kd->nNodes = 0;
+	kd->nSplit = 0;
+	kd->nMove = 0;
+	kd->nActive = 0;
+	kd->nInitActive = 0;
 	kd->pMove = NULL;
 	kd->pInit = NULL;
 	kd->pGroup = NULL;
 	kd->kdNodes = NULL;
-	kd->kdGroup = NULL;
 	kd->piGroup = NULL;
+	kd->nGroup = 0;
 	*pkd = kd;
 	return(1);
 	}
@@ -87,6 +104,8 @@ int kdReadTipsy(KD kd,FILE *fp)
 	struct dark_particle dp;
 	struct star_particle sp;
 
+	if (kd->bOutDiag) puts(">> kdReadTipsy()");
+	fflush(stdout);
 	fread(&h,sizeof(struct dump),1,fp);
 	kd->inType = 0;
 	kd->nDark = h.ndark;
@@ -145,6 +164,8 @@ int kdReadTipsy(KD kd,FILE *fp)
 			break;
 			}
 		}
+	if (kd->bOutDiag) puts("<< kdReadTipsy()");
+	fflush(stdout);
 	return(kd->nParticles);
 	}
 
@@ -301,6 +322,8 @@ int kdBuildTree(KD kd)
 	KDN *c;
 	BND bnd;
 
+	if (kd->bOutDiag) puts(">> kdBuildTree()");
+	fflush(stdout);
 	if (kd->nInitActive == 0) {
 		if (kd->kdNodes) free(kd->kdNodes);
 		kd->kdNodes = NULL;
@@ -379,6 +402,8 @@ int kdBuildTree(KD kd)
 			}
 		}
 	UpPassInit(kd,ROOT);
+	if (kd->bOutDiag) puts("<< kdBuildTree()");
+	fflush(stdout);
 	return(1);
 	}
 
@@ -389,6 +414,8 @@ int kdBuildMoveTree(KD kd)
 	KDN *c;
 	BND bnd;
 
+	if (kd->bOutDiag) puts(">> kdBuildMoveTree()");
+	fflush(stdout);
 	if (kd->nActive == 0) {
 		if (kd->kdNodes) free(kd->kdNodes);
 		kd->kdNodes = NULL;
@@ -467,6 +494,8 @@ int kdBuildMoveTree(KD kd)
 			}
 		}
 	UpPassMove(kd,ROOT);
+	if (kd->bOutDiag) puts("<< kdBuildMoveTree()");
+	fflush(stdout);
 	return(1);
 	}
 
@@ -545,6 +574,8 @@ int kdInitMove(KD kd,float fDensMin,float fTempMax,float fMassMax,
 	int pi,nCnt,j;
 	float fCvg2;
 
+	if (kd->bOutDiag) puts(">> kdInitMove()");
+	fflush(stdout);
 	/*
 	 ** First count number of particles meating the criterion.
 	 */
@@ -578,6 +609,8 @@ int kdInitMove(KD kd,float fDensMin,float fTempMax,float fMassMax,
 	for (pi=0;pi<kd->nParticles;++pi) {
 		if (kd->pInit[pi].fBall2 < fCvg2) kd->pInit[pi].fBall2 = fCvg2;
 		}
+	if (kd->bOutDiag) puts("<< kdInitMove()");
+	fflush(stdout);
 	return(kd->nActive);
 	}
 
@@ -587,6 +620,8 @@ int kdScatterActive(KD kd,int bGasAndDark)
 	PINIT *p,t;
 	int i,j;
 	
+	if (kd->bOutDiag) puts(">> kdScatterActive()");
+	fflush(stdout);
 	p = kd->pInit;
 	i = 0;
 	j = kd->nParticles-1;
@@ -601,6 +636,8 @@ int kdScatterActive(KD kd,int bGasAndDark)
 		}
  done:
 	kd->nInitActive = i;
+	if (kd->bOutDiag) puts("<< kdScatterActive()");
+	fflush(stdout);
 	return(i);
 	}
 
@@ -617,6 +654,8 @@ void kdMoveParticles(KD kd,float fStep)
 	int i,j;
 	float ax,ay,az,ai;
 
+	if (kd->bOutDiag) puts(">> kdMoveParticles()");
+	fflush(stdout);
 	p = kd->pMove;
 	for (i=0;i<kd->nActive;++i) {
 		ax = p[i].a[0];
@@ -637,6 +676,8 @@ void kdMoveParticles(KD kd,float fStep)
 				p[i].r[j] += kd->fPeriod[j];
 			}
 		}
+	if (kd->bOutDiag) puts("<< kdMoveParticles()");
+	fflush(stdout);
 	}
 
 
@@ -646,6 +687,8 @@ int kdPruneInactive(KD kd,float fCvg)
 	int i,j;
 	float dx,dy,dz,dr2,fCvg2,hx,hy,hz;
 
+	if (kd->bOutDiag) puts(">> kdPruneInactive()");
+	fflush(stdout);
 	p = kd->pMove;
 	hx = 0.5*kd->fPeriod[0];
 	hy = 0.5*kd->fPeriod[1];
@@ -693,6 +736,8 @@ int kdPruneInactive(KD kd,float fCvg)
 			p[i].rOld[j] = p[i].r[j];
 			}
 		}
+	if (kd->bOutDiag) puts("<< kdPruneInactive()");
+	fflush(stdout);
 	return(i);
 	}
 
@@ -713,6 +758,8 @@ void kdFoF(KD kd,float fTau)
 	float fTau2;
 	float dx,dy,dz,x,y,z,lx,ly,lz,sx,sy,sz,fDist2;
 
+	if (kd->bOutDiag) puts(">> kdFoF()");
+	fflush(stdout);
     kd->nActive = kd->nMove;
 	if (kd->nActive == 0) return;
 	kdBuildMoveTree(kd);
@@ -806,6 +853,8 @@ void kdFoF(KD kd,float fTau)
 		kd->piGroup[p[pi].iOrder] = Group[pi];
 		}
 	free(Group);
+	if (kd->bOutDiag) puts("<< kdFoF()");
+	fflush(stdout);
 	}
 
 
@@ -814,6 +863,8 @@ void kdInGroup(KD kd,char *pszIn)
 	FILE *fp;
 	int nGroup,iGroup,n,pi;
 
+	if (kd->bOutDiag) puts(">> kdInGroup()");
+	fflush(stdout);
 	kd->piGroup = (int *)malloc(kd->nParticles*sizeof(int));
 	assert(kd->piGroup);
 	for (pi=0;pi<kd->nParticles;++pi) {
@@ -847,6 +898,8 @@ void kdInGroup(KD kd,char *pszIn)
 		if (iGroup > nGroup) nGroup = iGroup;
 		}
 	kd->nGroup = nGroup+1;
+	if (kd->bOutDiag) puts("<< kdInGroup()");
+	fflush(stdout);
 	}
 
 
@@ -859,10 +912,14 @@ void kdInitpGroup(KD kd)
 	PINIT *p;
 	int i,iGroup,j;
 
+	if (kd->bOutDiag) puts(">> kdInitpGroup()");
+	fflush(stdout);
 	kd->pGroup = (PGROUP *)malloc(kd->nGroup*sizeof(PGROUP));
 	assert(kd->pGroup != NULL);
 	for (i=0;i<kd->nGroup;++i) {
 		kd->pGroup[i].nMembers = 0;
+		kd->pGroup[i].pStart = 0;
+		kd->pGroup[i].pCurr = 0;
 		kd->pGroup[i].fMass = 0.0;
 		kd->pGroup[i].fRadius = 0.0;
 		for (j=0;j<3;++j) {
@@ -874,13 +931,18 @@ void kdInitpGroup(KD kd)
 	p = kd->pInit;
 	for (i=0;i<kd->nParticles;++i) {
 		iGroup = kd->piGroup[p[i].iOrder];
+		/*
+		 ** We need the number of members, even for group 0 (non-group members)
+		 */
+		kd->pGroup[iGroup].nMembers += 1;
 		if (!iGroup) continue;
 		kd->pGroup[iGroup].fMass += p[i].fMass;
-		kd->pGroup[iGroup].nMembers += 1;
 		for (j=0;j<3;++j) {
 			kd->pGroup[iGroup].rel[j] = p[i].r[j];
 			}
 		}
+	if (kd->bOutDiag) puts("<< kdInitpGroup()");
+	fflush(stdout);
 	}
 
 
@@ -896,6 +958,8 @@ void kdCalcCenter(KD kd)
 	int i,j,iGroup;
 	float del;
 
+	if (kd->bOutDiag) puts(">> kdCalcCenter()");
+	fflush(stdout);
 	for (i=0;i<kd->nGroup;++i) {
 		for (j=0;j<3;++j) {
 			kd->pGroup[i].rCenter[j] = 0.0;
@@ -941,10 +1005,14 @@ void kdCalcCenter(KD kd)
 	 */
 	free(kd->pMove);
 	kd->pMove = NULL;
+	kd->nMove = 0;
+	kd->nActive = 0;
 	if (kd->kdNodes) {
 		free(kd->kdNodes);
 		kd->kdNodes = NULL;
 		}
+	if (kd->bOutDiag) puts("<< kdCalcCenter()");
+	fflush(stdout);
 	}
 
 
@@ -962,6 +1030,8 @@ void kdReadCenter(KD kd,char *pszGtp)
 	int i,j,iGroup,bMismatch;
 	float del;
 
+	if (kd->bOutDiag) puts(">> kdReadCenter()");
+	fflush(stdout);
 	fp = fopen(pszGtp,"r");
 	if (fp != NULL) {
 		/*
@@ -1038,39 +1108,57 @@ void kdReadCenter(KD kd,char *pszGtp)
 				}
 			}
 		}
+	if (kd->bOutDiag) puts("<< kdReadCenter()");
+	fflush(stdout);
 	}
 
 
+/*
+ ** This function assumes that the pGroup array is correctly set up, in
+ ** particlular that the number of members is consistent with that given
+ ** in the piGroup group-assignment array.
+ ** Make SURE that the number of members is correct BEFORE calling this.
+ */
 void kdGroupOrder(KD kd)
 {
 	PINIT *p,t;
-	int i,j,iGroup,pi;
+	int iGroup,pi,igp,ind;
 	
-	/*
-	 ** First split off the "non-group" particles.
-	 */
-	if (kd->kdGroup != NULL) free(kd->kdGroup);
-	kd->kdGroup = (KDN *)malloc(kd->nGroup*sizeof(KDN));
-	assert(kd->kdGroup != NULL);
-	p = kd->pInit;
-	pi = 0;
-	for (iGroup=0;iGroup<kd->nGroup;++iGroup) {
-		i = pi;
-		j = kd->nParticles-1;
-		while (1) {
-			while (kd->piGroup[p[i].iOrder] == iGroup)
-				if (++i > j) goto done;
-			while (kd->piGroup[p[j].iOrder] != iGroup)
-				if (i > --j) goto done;
-			t = p[i];
-			p[i] = p[j];
-			p[j] = t;
-			}
-	done:
-		kd->kdGroup[iGroup].pLower = pi;
-		kd->kdGroup[iGroup].pUpper = i-1;
-		pi = i;
+	if (kd->bOutDiag) puts(">> kdGroupOrder()");
+	fflush(stdout);
+   	p = kd->pInit;
+	kd->pGroup[0].pStart = 0;
+	kd->pGroup[0].pCurr = 0;
+	for (iGroup=1;iGroup<kd->nGroup;++iGroup) {
+		kd->pGroup[iGroup].pStart = kd->pGroup[iGroup-1].pStart +
+			kd->pGroup[iGroup-1].nMembers;
+		kd->pGroup[iGroup].pCurr = kd->pGroup[iGroup].pStart;
 		}
+	pi = 0;
+	iGroup = 0;
+	while (1) {
+		igp = kd->piGroup[p[pi].iOrder];
+		ind = kd->pGroup[igp].pCurr++;
+		if (ind == pi) {
+			/*
+			 ** Got stuck, find a new starting point.
+			 */
+			while (kd->pGroup[iGroup].pCurr ==
+				   kd->pGroup[iGroup].pStart + kd->pGroup[iGroup].nMembers) {
+				if (++iGroup == kd->nGroup) goto done;
+				}
+			pi = kd->pGroup[iGroup].pCurr;
+			if (pi == kd->nParticles) goto done;
+			}
+		else {
+			t = p[ind];
+			p[ind] = p[pi];
+			p[pi] = t;
+			}
+		}
+ done:
+	if (kd->bOutDiag) puts("<< kdGroupOrder()");
+	fflush(stdout);
 	}
 
 
@@ -1079,21 +1167,18 @@ void kdGroupOrder(KD kd)
  */
 void kdTooSmall(KD kd,int nMembers)
 {
-	int *pnMembers,*pMap;
+	int *pMap;
 	int i,pi,nGroup;
 
+	if (kd->bOutDiag) puts(">> kdTooSmall()");
+	fflush(stdout);
 	kdGroupOrder(kd);
-	pnMembers = (int *)malloc(kd->nGroup*sizeof(int));
-	assert(pnMembers != NULL);
 	pMap = (int *)malloc(kd->nGroup*sizeof(int));
 	assert(pMap != NULL);
-	for (i=0;i<kd->nGroup;++i) pnMembers[i] = 0;
-	for (pi=0;pi<kd->nParticles;++pi) {
-		++pnMembers[kd->piGroup[pi]];
-		}
 	for (i=1;i<kd->nGroup;++i) {
-		if (pnMembers[i] < nMembers) {
-			pnMembers[i] = 0;
+		if (kd->pGroup[i].nMembers < nMembers) {
+			kd->pGroup[0].nMembers += kd->pGroup[i].nMembers;
+			kd->pGroup[i].nMembers = 0;
 			}
 		}
 	/*
@@ -1104,8 +1189,7 @@ void kdTooSmall(KD kd,int nMembers)
 	for (i=1;i<kd->nGroup;++i) {
 		pMap[i] = nGroup;
 		kd->pGroup[nGroup] = kd->pGroup[i];
-		kd->kdGroup[nGroup] = kd->kdGroup[i];
-		if (pnMembers[i] == 0) {
+		if (kd->pGroup[i].nMembers == 0) {
 			pMap[i] = 0;
 			}
 		else {
@@ -1119,9 +1203,10 @@ void kdTooSmall(KD kd,int nMembers)
 		kd->piGroup[pi] = pMap[kd->piGroup[pi]];
 		}
 	free(pMap);
-	free(pnMembers);
 	kd->nGroup = nGroup;
 	kdGroupOrder(kd);
+	if (kd->bOutDiag) puts("<< kdTooSmall()");
+	fflush(stdout);
 	}
 
 
@@ -1131,12 +1216,13 @@ void kdTooSmall(KD kd,int nMembers)
 void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark)
 {
 	PINIT *q,t;
-	KDN *pkdn;
 	int iGroup,n,i,j,iBig,pi;
 	float hx,hy,hz,dx,dy,dz,dv,dv2,fShift,fCosmo,fTot,fTotBig;
 	double dMass,rcm[3],vcm[3],*pdPot,dPot;
 	int nUnbind = 0;
 
+	if (kd->bOutDiag) puts(">> kdUnbind()");
+	fflush(stdout);
 	kdGroupOrder(kd);
 	hx = 0.5*kd->fPeriod[0];
 	hy = 0.5*kd->fPeriod[1];
@@ -1148,13 +1234,12 @@ void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark)
 	 ** They are the first "group" in the pInit array after the group order.
 	 ** The tree is for scooping particles!
 	 */
-	kd->nInitActive = kd->kdGroup[0].pUpper+1;
+	kd->nInitActive = kd->pGroup[0].nMembers;
 	kdBuildTree(kd);
 	printf("Groups before Unbind:%d\n",kd->nGroup-1);
 	fflush(stdout);
 	for (iGroup=1;iGroup<kd->nGroup;++iGroup) {
-		pkdn = &kd->kdGroup[iGroup];
-		n = pkdn->pUpper-pkdn->pLower+1;
+		n = kd->pGroup[iGroup].nMembers;
 		/*
 		 ** Make temporary particles to hold new positions
 		 */
@@ -1164,7 +1249,7 @@ void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark)
 		 ** Make all group particles have coordinates relative to 
 		 ** a group reference point, given by pGroup[i].rel.
 		 */
-		for (i=0,pi=pkdn->pLower;i<n;++i,++pi) {
+		for (i=0,pi=kd->pGroup[iGroup].pStart;i<n;++i,++pi) {
 			dx = kd->pInit[pi].r[0] - kd->pGroup[iGroup].rel[0];
 			dy = kd->pInit[pi].r[1] - kd->pGroup[iGroup].rel[1];
 			dz = kd->pInit[pi].r[2] - kd->pGroup[iGroup].rel[2];
@@ -1229,7 +1314,10 @@ void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark)
 			/*
 			 ** Unbind particle iBig!
 			 */
+			assert(kd->piGroup[q[iBig].iOrder] == iGroup);
 			kd->piGroup[q[iBig].iOrder] = 0;
+			--kd->pGroup[iGroup].nMembers;
+			++kd->pGroup[0].nMembers;
 			/*
 			 ** Adjust rcm and vcm.
 			 */
@@ -1266,6 +1354,8 @@ void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark)
 	printf("Number of particles Unbound:%d\n",nUnbind);
 	fflush(stdout);
 	kdGroupOrder(kd);
+	if (kd->bOutDiag) puts("<< kdUnbind()");
+	fflush(stdout);
 	}
 
 
@@ -1289,8 +1379,16 @@ int CmpMove(const void *p1,const void *p2)
 
 void Order(KD kd)
 {
-	qsort(kd->pInit,kd->nParticles,sizeof(PINIT),CmpInit);
-	qsort(kd->pMove,kd->nMove,sizeof(PMOVE),CmpMove);
+	if (kd->bOutDiag) puts(">> kdOrder()");
+	fflush(stdout);
+	if (kd->pInit != NULL) {
+		qsort(kd->pInit,kd->nParticles,sizeof(PINIT),CmpInit);
+		}
+	if (kd->pMove != NULL) {
+		qsort(kd->pMove,kd->nMove,sizeof(PMOVE),CmpMove);
+		}
+	if (kd->bOutDiag) puts("<< kdOrder()");
+	fflush(stdout);
 	}
 
 
@@ -1299,6 +1397,8 @@ void kdOutGroup(KD kd,char *pszFile)
 	FILE *fp;
 	int i;
 
+	if (kd->bOutDiag) puts(">> kdOutGroup()");
+	fflush(stdout);
 	printf("Number of Groups:%d\n",kd->nGroup-1);
 	fflush(stdout);
 	if (pszFile) {
@@ -1311,6 +1411,8 @@ void kdOutGroup(KD kd,char *pszFile)
 	fprintf(fp,"%d\n",kd->nParticles);
 	for (i=0;i<kd->nParticles;++i) fprintf(fp,"%d\n",kd->piGroup[i]);
 	fclose(fp);
+	if (kd->bOutDiag) puts("<< kdOutGroup()");
+	fflush(stdout);
 	}
 
 
@@ -1409,6 +1511,8 @@ void kdWriteGroup(KD kd,char *pszFile)
 	struct dump h;
 	struct star_particle sp;
 
+	if (kd->bOutDiag) puts(">> kdWriteGroup()");
+	fflush(stdout);
 	/*
 	 ** Calculate the radius of each group.
 	 */
@@ -1455,6 +1559,8 @@ void kdWriteGroup(KD kd,char *pszFile)
 		fwrite(&sp,sizeof(struct star_particle),1,fp);
 		}
 	fclose(fp);
+	if (kd->bOutDiag) puts("<< kdWriteGroup()");
+	fflush(stdout);
 	}
 
 
@@ -1476,13 +1582,14 @@ void kdOutStats(KD kd,char *pszFile, float fDensMin, float fTempMax)
 	FILE *fp;
 	int iGroup,i,pi,j,k,n;
 	PINIT *q;
-	KDN *pkdn;
 	float hx,hy,hz,dx,dy,dz;
 	float fTotMass, fGasMass, fStarMass, fHalfMass;
 	float fVcirc;
 	float flVcirc;
 	float fmVcirc;
 
+	if (kd->bOutDiag) puts(">> kdOutStats()");
+	fflush(stdout);
 	fp = fopen(pszFile,"w");
 	assert(fp != NULL);
 	kdGroupOrder(kd);
@@ -1493,8 +1600,7 @@ void kdOutStats(KD kd,char *pszFile, float fDensMin, float fTempMax)
 	 * Particles should be in Group Order.
 	 */
 	for (iGroup=1;iGroup<kd->nGroup;++iGroup) {
-		pkdn = &kd->kdGroup[iGroup];
-		n = pkdn->pUpper-pkdn->pLower+1;
+		n = kd->pGroup[iGroup].nMembers;
 		/*
 		 ** Make temporary particles to hold new positions
 		 */
@@ -1505,7 +1611,7 @@ void kdOutStats(KD kd,char *pszFile, float fDensMin, float fTempMax)
 		 ** a group reference point, given by pGroup[iGroup].rCenter
 		 ** in this case.
 		 */
-		for (i=0,pi=pkdn->pLower;i<n;++i,++pi) {
+		for (i=0,pi=kd->pGroup[iGroup].pStart;i<n;++i,++pi) {
 			dx = kd->pInit[pi].r[0] - kd->pGroup[iGroup].rCenter[0];
 			dy = kd->pInit[pi].r[1] - kd->pGroup[iGroup].rCenter[1];
 			dz = kd->pInit[pi].r[2] - kd->pGroup[iGroup].rCenter[2];
@@ -1564,6 +1670,8 @@ void kdOutStats(KD kd,char *pszFile, float fDensMin, float fTempMax)
 		free(q);
 		}
 	fclose(fp);
+	if (kd->bOutDiag) puts("<< kdOutStats()");
+	fflush(stdout);
 	}
 
 
@@ -1573,7 +1681,6 @@ void kdFinish(KD kd)
 	if (kd->pInit) free(kd->pInit);
 	if (kd->pGroup) free(kd->pGroup);
 	if (kd->kdNodes) free(kd->kdNodes);
-	if (kd->kdGroup) free(kd->kdGroup);
 	if (kd->piGroup) free(kd->piGroup);
 	free(kd);
 	}

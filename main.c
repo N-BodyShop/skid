@@ -31,7 +31,7 @@ void usage(void)
 	fprintf(stderr,"     [-c <xyzCenter>]\n");
 	fprintf(stderr,"     [-cx <xCenter>] [-cy <yCenter>] [-cz <zCenter>]\n");
 	fprintf(stderr,"OUTPUT arguments:\n");
-	fprintf(stderr,"     [-o <Output Name>] [-ray] [-den] [-stats]\n");
+	fprintf(stderr,"     [-o <Output Name>] [-ray] [-den] [-stats] [-diag]\n");
 	fprintf(stderr,"\nSee man page skid(1).\n");
 	exit(1);
 	}
@@ -62,6 +62,7 @@ void main(int argc,char **argv)
 	char achFile[256];
 	int iExt;
 	int nScat;
+	int bOutDiag;
 
 	printf("SKID v1.3: Joachim Stadel, Jan. 1996\n");
 	/*
@@ -113,6 +114,7 @@ void main(int argc,char **argv)
 	bOutRay = 0;
 	bOutDens = 0;
 	bOutStats = 0;
+	bOutDiag = 0;
 	/*
 	 ** Now get the command line arguments!
 	 */
@@ -280,6 +282,10 @@ void main(int argc,char **argv)
 			bOutStats = 1;
 			++i;
 			}
+		else if (!strcmp(argv[i],"-diag")) {
+			bOutDiag = 1;
+			++i;
+			}
 		else usage();
 		}
 	/*
@@ -293,7 +299,7 @@ void main(int argc,char **argv)
 	if (!bScoop) fScoop = 2.0*fTau;
 	fStep = 0.5*fCvg;
 
-	kdInit(&kd,nBucket,fPeriod,fCenter);
+	kdInit(&kd,nBucket,fPeriod,fCenter,bOutDiag);
 	kdReadTipsy(kd,stdin);
 	if (bUnbindOnly) {
 		/*
