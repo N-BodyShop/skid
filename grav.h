@@ -31,8 +31,8 @@
 	}
 
 
-void kdCellPot(KD,KDN *,int,double *);
-void kdSubPot(KD,KDN *,PINIT *,int,double *);
-void kdAddScoopPot(KD,KDN *,float *,float,float *,int,double *);
+void kdCellPot(KD,PINIT *,int,int,double *);
+void kdSubPot(KD,PINIT *,int,PINIT *,int,double *);
+void kdAddScoopPot(KD,PINIT *,int,float *,float,float *,int,double *);
 
 #endif

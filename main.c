@@ -22,8 +22,8 @@ void usage(void)
 	fprintf(stderr,"GROUP FINDING arguments (see man page!):\n");
 	fprintf(stderr,"     [-s <nSmooth>] [-d <fMinDensity>] [-t <fMaxTemp>]\n");
 	fprintf(stderr,"     [-cvg <fConvergeRadius>] [-scoop <fScoopRadius>]\n");
-	fprintf(stderr,"     [-m <nMinMembers>] [-nu] [-unbind <GroupFile>]\n");
-	fprintf(stderr,"     [-M <fMaxMass>] [-mall]\n");
+	fprintf(stderr,"     [-m <nMinMembers>] [-nu] [-gd] [-unbind <GroupName>[.grp]]\n");
+	fprintf(stderr,"     [-M <fMaxMass>]\n");
 	fprintf(stderr,"GRAVITATIONAL SOFTENING arguments:\n");
 	fprintf(stderr,"     [-spline] [-plummer] [-e <fSoft>]\n"); 
 	fprintf(stderr,"PERIODIC BOX specification:\n");
@@ -45,8 +45,7 @@ void main(int argc,char **argv)
 	 ** Input argument variables and control.
 	 */
 	int bTau,bCvg,bScoop,nSmooth,nMembers,bNoUnbind,bUnbindOnly,iSoftType;
-	int bEps,bOutRay,bOutDens;
-	int bMoveAll, bOutStats;
+	int bEps,bOutRay,bOutDens,bGasAndDark,bOutStats;
 	float fTau,z,Omega0,G,H0,fDensMin,fTempMax,fMassMax,fCvg,fScoop,fEps;
 	float fPeriod[3],fCenter[3];
 	char achGroup[256],achName[256];
@@ -61,8 +60,9 @@ void main(int argc,char **argv)
 	int sec4,usec4;
 	int sec5,usec5;
 	char achFile[256];
-	
-	printf("SKID v1.2: Joachim Stadel, Jan. 1995\n");
+	int iExt;
+
+	printf("SKID v1.3: Joachim Stadel, Jan. 1996\n");
 	/*
 	 ** Bucket size set to 16, user cannot affect this!
 	 */
@@ -87,9 +87,9 @@ void main(int argc,char **argv)
 	fMassMax = HUGE;
 	bCvg = 0;
 	bScoop = 0;
-	bMoveAll = 0;
 	nMembers = 8;
 	bNoUnbind = 0;
+	bGasAndDark = 0;
 	bUnbindOnly = 0;
 	/*
 	 ** Default gravitational parameters.
@@ -190,12 +190,12 @@ void main(int argc,char **argv)
 			nMembers = atoi(argv[i]);
 			++i;
 			}
-		else if (!strcmp(argv[i],"-mall")) {
-			bMoveAll = 1;
-			++i;
-			}
 		else if (!strcmp(argv[i],"-nu")) {
 			bNoUnbind = 1;
+			++i;
+			}
+		else if (!strcmp(argv[i],"-gd")) {
+			bGasAndDark = 1;
 			++i;
 			}
 		else if (!strcmp(argv[i],"-unbind")) {
@@ -306,22 +306,31 @@ void main(int argc,char **argv)
 	kdInit(&kd,nBucket,fPeriod,fCenter);
 	kdReadTipsy(kd,stdin);
 	if (bUnbindOnly) {
-		int pi;
-
-		kdInGroup(kd,achGroup);
-		kd->nMove = kd->nParticles;
-		kd->pMove = (PMOVE *)malloc(kd->nMove*sizeof(PMOVE));
-		for (pi=0;pi<kd->nParticles;++pi) {
-		    for (j=0;j<3;++j) {
-			kd->pMove[pi].r[j] = kd->pInit[pi].r[j];
-			kd->pMove[pi].rOld[j] = kd->pInit[pi].r[j];
+		/*
+		 ** to provide compatibility with v1.2 skid we need to strip off
+		 ** the .grp extension if it is specified.
+		 */
+		iExt = strlen(achGroup) - 4;
+		if (iExt < 0) iExt = 0;
+		if (!strcmp(&achGroup[iExt],".grp")) {
+			/*
+			 ** The extension was provided, so remove it.
+			 */
+			achGroup[iExt] = 0; 
 			}
-		    kd->pMove[pi].iOrder = kd->pInit[pi].iOrder;
-		    }
-		assert(kd->pMove != NULL);
+		strcpy(achFile,achGroup);
+		strcat(achFile,".grp");
+		kdInGroup(kd,achFile);
+		/*
+		 ** Check and see if there exists a .gtp file with the right name.
+		 */
+		strcpy(achFile,achGroup);
+		strcat(achFile,".gtp");
+		kdInitpGroup(kd);
+		kdReadCenter(kd,achFile);
 		goto UnbindOnly;
 		}
-	kdScatterActive(kd, bMoveAll);
+	kdScatterActive(kd,bGasAndDark);
 	kdBuildTree(kd);
 	smInit(&smx,kd,nSmooth);
 	kdTime(kd,&sec1,&usec1);
@@ -341,7 +350,7 @@ void main(int argc,char **argv)
 	 ** number of scatterers if possible.
 	 */
 	kdTime(kd,&sec2,&usec2);
-	kdInitMove(kd,fDensMin,fTempMax,fMassMax,fCvg, bMoveAll);
+	kdInitMove(kd,fDensMin,fTempMax,fMassMax,fCvg,bGasAndDark);
 	kdBuildMoveTree(kd);
 	smAccDensity(smx);
 	kdMoveParticles(kd,fStep);
@@ -392,6 +401,8 @@ void main(int argc,char **argv)
 	/*
 	 ** Prepare for unbinding.
 	 */
+	kdInitpGroup(kd);
+	kdCalcCenter(kd);
  UnbindOnly:
 	kdGroupOrder(kd);
 	kdTooSmall(kd,nMembers);
@@ -409,7 +420,7 @@ void main(int argc,char **argv)
 		 ** Do the unbinding of particles.
 		 */
 		kdTime(kd,&sec4,&usec4);
-		kdUnbind(kd,iSoftType,fScoop, bMoveAll);
+		kdUnbind(kd,iSoftType,fScoop,bGasAndDark);
 		kdTime(kd,&sec4,&usec4);
 		kdTooSmall(kd,nMembers);
 		}
@@ -425,7 +436,7 @@ void main(int argc,char **argv)
 	if (bOutStats) {
 	    strcpy(achFile,achName);
 	    strcat(achFile,".stat");
-	    kdOutStats(kd,achFile, fDensMin, fTempMax);
+	    kdOutStats(kd,achFile,fDensMin,fTempMax);
 	}
 	printf("SKID CPU Time:\n");
 	if (!bUnbindOnly) {

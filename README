@@ -2,17 +2,34 @@
 
 				SKID (Spline Kernel Interpolative Denmax)
 					
-							VERSION 1.2
+							VERSION 1.3
 
 
 				A Group Finder for N-body Simulations
 
-				Stadel Release 1.2: October 27, 1994
+				Stadel Release 1.3: February 10, 1996
 
 Changes from v1.1:
 	o 	Fixed bug in tree building, this bug only affected cases where
 		a very small "bucket" size was chosen and the number of particles
 		was not a power of two.
+
+Changes from v1.2:
+	o	Added ability to handle moving both gas and dark particles since
+		there seem to be situations where this is quite interesting.
+	o	The -unbind option now works completely self consistently. It will
+		now grab both the .grp and .gtp files, thereby getting the correct
+		group center. If no .gtp file is present (as is the case when using 
+		FOF) unbinding will calculate the group center to be the center of
+		mass. This was somewhat of a disturbing problem in the past.
+	o	Now change log would be complete without this: enhanced performance.
+		Tree searching has been improved so that moving particles is more 
+		efficient. A "heuristic" algorithm is employed, by default, to remove
+		scatterers which makes a big difference in the speed of the code.
+		I add a conservative warning to this though, run a test case disabling
+		the fancy remove scatterers algorithm first (-nsp) as a comparison.
+		The reason for this is because we know this should usually be a good 
+		technique, but we cannot prove that it will always be correct.
 
 Included are:
 	Makefile

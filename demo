@@ -1,2 +1,2 @@
 #! /bin/csh -f
-totipnat <dark.std|skid -tau 9e-4 -s 64 -d 170 -m 8 -H 2.8944 -p 1 -ray -o dark
+./totipnat <dark.std|./skid -tau 9e-4 -s 64 -d 170 -m 8 -H 2.8944 -p 1 -ray -o dark

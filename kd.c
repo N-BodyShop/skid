@@ -301,6 +301,12 @@ int kdBuildTree(KD kd)
 	KDN *c;
 	BND bnd;
 
+	if (kd->nInitActive == 0) {
+		if (kd->kdNodes) free(kd->kdNodes);
+		kd->kdNodes = NULL;
+		return(1);
+		}
+	assert(kd->nInitActive > 0);
 	n = kd->nInitActive;
 	kd->nLevels = 1;
 	l = 1;
@@ -311,7 +317,10 @@ int kdBuildTree(KD kd)
 		}
 	kd->nSplit = l;
 	kd->nNodes = l<<1;
-	if (kd->kdNodes) free(kd->kdNodes);
+	if (kd->kdNodes) {
+		free(kd->kdNodes);
+		kd->kdNodes = NULL;
+		}
 	kd->kdNodes = (KDN *)malloc(kd->nNodes*sizeof(KDN));
 	assert(kd->kdNodes != NULL);
 	/*
@@ -380,6 +389,12 @@ int kdBuildMoveTree(KD kd)
 	KDN *c;
 	BND bnd;
 
+	if (kd->nActive == 0) {
+		if (kd->kdNodes) free(kd->kdNodes);
+		kd->kdNodes = NULL;
+		return(1);
+		}
+	assert(kd->nActive > 0);
 	n = kd->nActive;
 	kd->nLevels = 1;
 	l = 1;
@@ -390,7 +405,10 @@ int kdBuildMoveTree(KD kd)
 		}
 	kd->nSplit = l;
 	kd->nNodes = l<<1;
-	if (kd->kdNodes) free(kd->kdNodes);
+	if (kd->kdNodes) {
+		free(kd->kdNodes);
+		kd->kdNodes = NULL;
+		}
 	kd->kdNodes = (KDN *)malloc(kd->nNodes*sizeof(KDN));
 	assert(kd->kdNodes != NULL);
 	/*
@@ -453,13 +471,10 @@ int kdBuildMoveTree(KD kd)
 	}
 
 
-int CutCriterion(KD kd,int pi,float fDensMin,float fTempMax, float
-		 fMassMax, int bMoveAll)
+int CutCriterion(KD kd,int pi,float fDensMin,float fTempMax,
+				 float fMassMax,int bGasAndDark)
 {
-        if(kd->pInit[pi].fMass > fMassMax)
-	    return(0);
-        if(bMoveAll)
-	    return(1);
+	if (kd->pInit[pi].fMass > fMassMax) return(0);
 	switch (kd->inType) {
 	case (DARK):
 		if (kd->pInit[pi].fDensity >= fDensMin) 
@@ -467,6 +482,11 @@ int CutCriterion(KD kd,int pi,float fDensMin,float fTempMax, float
 		break;
 	case (GAS):
 	case (DARK|GAS):
+		if (bGasAndDark) {
+			if (kdParticleType(kd,kd->pInit[pi].iOrder) == DARK) {
+				if (kd->pInit[pi].fDensity >= fDensMin) return(1);
+				}
+			}
 		if (kdParticleType(kd,kd->pInit[pi].iOrder) == GAS) {
 			if (kd->pInit[pi].fDensity >= fDensMin && 
 				kd->pInit[pi].fTemp <= fTempMax) return(1);
@@ -490,16 +510,15 @@ int CutCriterion(KD kd,int pi,float fDensMin,float fTempMax, float
 	}
 
 
-int ScatterCriterion(KD kd,int pi, int bMoveAll)
+int ScatterCriterion(KD kd,int pi,int bGasAndDark)
 {
-        if(bMoveAll)
-	    return(1);
 	switch (kd->inType) {
 	case (DARK):
 		return(1);
 	case (GAS):
 	case (DARK|GAS):
-		if (kdParticleType(kd,kd->pInit[pi].iOrder) == GAS) {
+		if (bGasAndDark) return(1);
+		else if (kdParticleType(kd,kd->pInit[pi].iOrder) == GAS) {
 			return(1);
 			}
 		break;
@@ -520,8 +539,8 @@ int ScatterCriterion(KD kd,int pi, int bMoveAll)
 	}
 
 
-void kdInitMove(KD kd,float fDensMin,float fTempMax, float fMassMax,
-		float fCvg, int bMoveAll)
+void kdInitMove(KD kd,float fDensMin,float fTempMax,float fMassMax,
+				float fCvg,int bGasAndDark)
 {
 	int pi,nCnt,j;
 	float fCvg2;
@@ -532,7 +551,7 @@ void kdInitMove(KD kd,float fDensMin,float fTempMax, float fMassMax,
 	kd->nMove = 0;
 	for (pi=0;pi<kd->nParticles;++pi) {
 		kd->nMove += CutCriterion(kd,pi,fDensMin,fTempMax,
-					  fMassMax, bMoveAll);
+								  fMassMax,bGasAndDark);
 		}
 	kd->nActive = kd->nMove;
 	printf("Number of Moving particles:%d\n",kd->nMove);
@@ -544,8 +563,7 @@ void kdInitMove(KD kd,float fDensMin,float fTempMax, float fMassMax,
 	assert(kd->pMove != NULL);
 	nCnt = 0;
 	for (pi=0;pi<kd->nParticles;++pi) {
-		if (CutCriterion(kd,pi,fDensMin,fTempMax, fMassMax,
-				 bMoveAll)) {
+		if (CutCriterion(kd,pi,fDensMin,fTempMax,fMassMax,bGasAndDark)) {
 			for (j=0;j<3;++j) {
 				kd->pMove[nCnt].r[j] = kd->pInit[pi].r[j];
 				kd->pMove[nCnt].rOld[j] = kd->pInit[pi].r[j];
@@ -565,7 +583,7 @@ void kdInitMove(KD kd,float fDensMin,float fTempMax, float fMassMax,
 	}
 
 
-int kdScatterActive(KD kd, int bMoveAll)
+int kdScatterActive(KD kd,int bGasAndDark)
 {
 	PINIT *p,t;
 	int i,j;
@@ -574,9 +592,9 @@ int kdScatterActive(KD kd, int bMoveAll)
 	i = 0;
 	j = kd->nParticles-1;
 	while (1) {
-		while (ScatterCriterion(kd,i, bMoveAll))
+		while (ScatterCriterion(kd,i,bGasAndDark))
 			if (++i > j) goto done;
-		while (!ScatterCriterion(kd,j, bMoveAll))
+		while (!ScatterCriterion(kd,j,bGasAndDark))
 			if (i > --j) goto done;
 		t = p[i];
 		p[i] = p[j];
@@ -716,6 +734,7 @@ void kdFoF(KD kd,float fTau)
 	float dx,dy,dz,x,y,z,lx,ly,lz,sx,sy,sz,fDist2;
 
     kd->nActive = kd->nMove;
+	if (kd->nActive == 0) return;
 	kdBuildMoveTree(kd);
 	p = kd->pMove;
 	c = kd->kdNodes;
@@ -822,7 +841,10 @@ void kdInGroup(KD kd,char *pszIn)
 		}
 	if (pszIn) {
 		fp = fopen(pszIn,"r");
-		assert(fp != NULL);
+		if (!fp) {
+			fprintf(stderr,"ERROR: Could not open file:%s\n",pszIn);
+			exit(1);
+			}
 		}
 	else {
 		fp = stdin;
@@ -845,6 +867,197 @@ void kdInGroup(KD kd,char *pszIn)
 		if (iGroup > nGroup) nGroup = iGroup;
 		}
 	kd->nGroup = nGroup+1;
+	}
+
+
+/*
+ ** This function sets the relative coordinate for each group. 
+ ** The relative coordinate can be the coordinates of any group member.
+ */
+void kdInitpGroup(KD kd)
+{
+	PINIT *p;
+	int i,iGroup,j;
+
+	kd->pGroup = (PGROUP *)malloc(kd->nGroup*sizeof(PGROUP));
+	assert(kd->pGroup != NULL);
+	for (i=0;i<kd->nGroup;++i) {
+		kd->pGroup[i].nMembers = 0;
+		kd->pGroup[i].fMass = 0.0;
+		kd->pGroup[i].fRadius = 0.0;
+		for (j=0;j<3;++j) {
+			kd->pGroup[i].vcm[j] = 0.0;
+			kd->pGroup[i].rCenter[j] = 0.0;
+			kd->pGroup[i].rel[j] = 0.0;
+			}
+		}
+	p = kd->pInit;
+	for (i=0;i<kd->nParticles;++i) {
+		iGroup = kd->piGroup[p[i].iOrder];
+		if (!iGroup) continue;
+		kd->pGroup[iGroup].fMass += p[i].fMass;
+		kd->pGroup[iGroup].nMembers += 1;
+		for (j=0;j<3;++j) {
+			kd->pGroup[iGroup].rel[j] = p[i].r[j];
+			}
+		}
+	}
+
+
+/*
+ ** Calculates the density "center" for all the groups.
+ ** It uses the moving particle mean position to determine this.
+ ** Must call kdInitpGroup() before calling this function.
+ */
+void kdCalcCenter(KD kd)
+{
+	PMOVE *p;
+	PINIT *q;
+	int i,j,iGroup;
+	float del;
+
+	for (i=0;i<kd->nGroup;++i) {
+		for (j=0;j<3;++j) {
+			kd->pGroup[i].rCenter[j] = 0.0;
+			kd->pGroup[i].vcm[j] = 0.0;
+			}
+		}
+	/*
+	 ** Also need to calculate kd->pGroup[i].vcm[j] and 
+	 ** to completely match the kdReadCenter() function.
+	 */
+	p = kd->pMove;
+	for (i=0;i<kd->nMove;++i) {
+		iGroup = kd->piGroup[p[i].iOrder];
+		if (!iGroup) continue;
+		for (j=0;j<3;++j) {
+			del = p[i].r[j] - kd->pGroup[iGroup].rel[j];
+			if (del > 0.5*kd->fPeriod[j]) del -= kd->fPeriod[j];
+			if (del <= -0.5*kd->fPeriod[j]) del += kd->fPeriod[j];
+			kd->pGroup[iGroup].rCenter[j] += del;
+			}
+		}
+	q = kd->pInit;
+	for (i=0;i<kd->nParticles;++i) {
+		iGroup = kd->piGroup[q[i].iOrder];
+		if (!iGroup) continue;
+		for (j=0;j<3;++j) {
+			kd->pGroup[iGroup].vcm[j] += q[i].fMass*q[i].v[j];
+			}
+		}
+	for (i=1;i<kd->nGroup;++i) {
+		for (j=0;j<3;++j) {
+			kd->pGroup[i].rCenter[j] /= kd->pGroup[i].nMembers;
+			kd->pGroup[i].rCenter[j] += kd->pGroup[i].rel[j];
+			if (kd->pGroup[i].rCenter[j] > kd->fCenter[j]+0.5*kd->fPeriod[j])
+				kd->pGroup[i].rCenter[j] -= kd->fPeriod[j];
+			if (kd->pGroup[i].rCenter[j] <= kd->fCenter[j]-0.5*kd->fPeriod[j])
+				kd->pGroup[i].rCenter[j] += kd->fPeriod[j];
+			kd->pGroup[i].vcm[j] /= kd->pGroup[i].fMass;
+			}
+		}
+	/*
+	 ** Can free up the moving particles and move tree here.
+	 */
+	free(kd->pMove);
+	kd->pMove = NULL;
+	if (kd->kdNodes) {
+		free(kd->kdNodes);
+		kd->kdNodes = NULL;
+		}
+	}
+
+
+/*
+ ** This function reads in the density centers from the .gtp file if it 
+ ** exists, otherwise it sets the center to be the center-of-mass.
+ ** Requires that kdInitpGroup() has been called first!
+ */
+void kdReadCenter(KD kd,char *pszGtp)
+{
+	FILE *fp;
+	PINIT *p;
+	struct dump h;
+	struct star_particle sp;
+	int i,j,iGroup,bMismatch;
+	float del;
+
+	fp = fopen(pszGtp,"r");
+	if (fp != NULL) {
+		/*
+		 ** Read from the file.
+		 */
+		fread(&h,sizeof(struct dump),1,fp);
+		/*
+		 ** Make sure that the number of Group-particles in this file
+		 ** agrees with that which we set before in kdInGroup!
+		 */
+		if (h.nstar != kd->nGroup-1) {
+			fprintf(stderr,"ERROR: Could not open file:%s\n",pszGtp);
+			exit(1);
+			}
+		/*
+		 ** Skip over any gas or dark matter particles that may be
+		 ** in the file as well. There shouldn't be any though unless
+		 ** future software uses a file interpretation of this sort.
+		 */
+		fseek(fp,h.nsph*sizeof(struct gas_particle),SEEK_CUR);
+		fseek(fp,h.ndark*sizeof(struct dark_particle),SEEK_CUR);
+		bMismatch = 0;
+		for (i=0;i<h.nstar;++i) {
+			fread(&sp,sizeof(struct star_particle),1,fp);
+			/*
+			 ** Verify that the mass of each group in the .gtp file
+			 ** matches that calculated from the .grp file as a sort
+			 ** of sanity check.
+			 */
+			if (!bMismatch) {
+				if (sp.mass != kd->pGroup[i+1].fMass) {
+					fprintf(stderr,"WARNING: Mismatch in group masses between\n");
+					fprintf(stderr,"         the .grp and .gtp files.\n");
+					}
+				bMismatch = 1;
+				}
+			for (j=0;j<3;++j) {
+				kd->pGroup[i+1].rCenter[j] = sp.pos[j];
+				kd->pGroup[i+1].vcm[j] = sp.vel[j];
+				}
+			}
+		}
+	else {
+		/*
+		 ** Set the center to be the center-of-mass.
+		 */
+		for (i=0;i<kd->nGroup;++i) {
+			for (j=0;j<3;++j) {
+				kd->pGroup[i].rCenter[j] = 0.0;
+				kd->pGroup[i].vcm[j] = 0.0;
+				}
+			}
+		p = kd->pInit;
+		for (i=0;i<kd->nParticles;++i) {
+			iGroup = kd->piGroup[p[i].iOrder];
+			if (!iGroup) continue;
+			for (j=0;j<3;++j) {
+				del = p[i].r[j] - kd->pGroup[iGroup].rel[j];
+				if (del > 0.5*kd->fPeriod[j]) del -= kd->fPeriod[j];
+				if (del <= -0.5*kd->fPeriod[j]) del += kd->fPeriod[j];
+				kd->pGroup[iGroup].rCenter[j] += p[i].fMass*del;
+				kd->pGroup[iGroup].vcm[j] += p[i].fMass*p[i].v[j];
+				}
+			}
+		for (i=1;i<kd->nGroup;++i) {
+			for (j=0;j<3;++j) {
+				kd->pGroup[i].rCenter[j] /= kd->pGroup[i].fMass;
+				kd->pGroup[i].rCenter[j] += kd->pGroup[i].rel[j];
+				if (kd->pGroup[i].rCenter[j] > kd->fCenter[j]+0.5*kd->fPeriod[j])
+					kd->pGroup[i].rCenter[j] -= kd->fPeriod[j];
+				if (kd->pGroup[i].rCenter[j] <= kd->fCenter[j]-0.5*kd->fPeriod[j])
+					kd->pGroup[i].rCenter[j] += kd->fPeriod[j];
+				kd->pGroup[i].vcm[j] /= kd->pGroup[i].fMass;
+				}
+			}
+		}
 	}
 
 
@@ -897,12 +1110,7 @@ void kdTooSmall(KD kd,int nMembers)
 void kdGroupOrder(KD kd)
 {
 	PINIT *p,t;
-	PMOVE *pm, tm;
-	KDN *kdMoveGroup;
 	int i,j,iGroup,pi;
-	int pj, pFirst;
-	int pmj;
-	float del;
 	
 	/*
 	 ** First split off the "non-group" particles.
@@ -928,81 +1136,15 @@ void kdGroupOrder(KD kd)
 		kd->kdGroup[iGroup].pUpper = i-1;
 		pi = i;
 		}
-	/*
-	 * Also order moved particles.
-	 */
-	kdMoveGroup = (KDN *)malloc(kd->nGroup*sizeof(KDN));
-	assert(kdMoveGroup != NULL);
-	pm = kd->pMove;
-	pi = 0;
-	for (iGroup=0;iGroup<kd->nGroup;++iGroup) {
-		i = pi;
-		j = kd->nMove-1;
-		while (1) {
-			while (kd->piGroup[pm[i].iOrder] == iGroup)
-				if (++i > j) goto donem;
-			while (kd->piGroup[pm[j].iOrder] != iGroup)
-				if (i > --j) goto donem;
-			tm = pm[i];
-			pm[i] = pm[j];
-			pm[j] = tm;
-			}
-	donem:
-		kdMoveGroup[iGroup].pLower = pi;
-		kdMoveGroup[iGroup].pUpper = i-1;
-		pi = i;
-		}
-	kd->pGroup = (PGROUP *)malloc(kd->nGroup*sizeof(PGROUP));
-	assert(kd->pGroup != NULL);
-	/*
-	 ** Set a relative coordinate system for each group.
-	 */
-	for (iGroup=1;iGroup<kd->nGroup;++iGroup) {
-		pFirst = kdMoveGroup[iGroup].pLower;
-		for (j=0;j<3;++j) {
-			kd->pGroup[iGroup].rel[j] = pm[pFirst].r[j];
-			}
-		}
-	/*
-	 ** Calculate the "center" for all the groups.  Use the center
-	 ** of mass of the moved particles.
-	 */
-	for (iGroup=1;iGroup<kd->nGroup;++iGroup) {
-		kd->pGroup[iGroup].fMass = 0.0;
-		for (j=0;j<3;++j) {
-			kd->pGroup[iGroup].rCenter[j] = 0.0;
-			}
-		for (pmj = kdMoveGroup[iGroup].pLower,
-			 pj = kd->kdGroup[iGroup].pLower;
-		     pmj <= kdMoveGroup[iGroup].pUpper; ++pmj, ++pj) {
-			for (j=0;j<3;++j) {
-				del = pm[pmj].r[j] - kd->pGroup[iGroup].rel[j];
-				if (del > 0.5*kd->fPeriod[j]) del -= kd->fPeriod[j];
-				if (del <= -0.5*kd->fPeriod[j]) del += kd->fPeriod[j];
-				kd->pGroup[iGroup].rCenter[j] += del;
-				}
-			kd->pGroup[iGroup].fMass += 1; /* p[pj].fMass; */
-			}
-		for (j=0;j<3;++j) {
-			kd->pGroup[iGroup].rCenter[j] /= kd->pGroup[iGroup].fMass;
-			kd->pGroup[iGroup].rCenter[j] += kd->pGroup[iGroup].rel[j];
-			if (kd->pGroup[iGroup].rCenter[j] > kd->fCenter[j]+0.5*kd->fPeriod[j])
-				kd->pGroup[iGroup].rCenter[j] -= kd->fPeriod[j];
-			if (kd->pGroup[iGroup].rCenter[j] <= kd->fCenter[j]-0.5*kd->fPeriod[j])
-				kd->pGroup[iGroup].rCenter[j] += kd->fPeriod[j];
-
-			}
-		}
-	free(kdMoveGroup);
 	}
 
 
-void kdUnbind(KD kd,int iSoftType,float fScoop, int bMoveAll)
+void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark)
 {
-	PINIT *p,t;
+	PINIT *q,t;
 	KDN *pkdn;
-	int iGroup,n,i,j,iBig;
-	float hx,hy,hz,dx,dy,dz,dv,dv2,fShift,fCosmo,fTot,fTotBig,fRad,fRadMax;
+	int iGroup,n,i,j,iBig,pi;
+	float hx,hy,hz,dx,dy,dz,dv,dv2,fShift,fCosmo,fTot,fTotBig;
 	double dMass,rcm[3],vcm[3],*pdPot,dPot;
 	int nUnbind = 0;
 
@@ -1022,25 +1164,30 @@ void kdUnbind(KD kd,int iSoftType,float fScoop, int bMoveAll)
 	fflush(stdout);
 	for (iGroup=1;iGroup<kd->nGroup;++iGroup) {
 		pkdn = &kd->kdGroup[iGroup];
-		p = &kd->pInit[pkdn->pLower];
 		n = pkdn->pUpper-pkdn->pLower+1;
+		/*
+		 ** Make temporary particles to hold new positions
+		 */
+		q = malloc(n*sizeof(PINIT));
+		assert(q != NULL);
 		/*
 		 ** Make all group particles have coordinates relative to 
 		 ** a group reference point, given by pGroup[i].rel.
 		 */
-		for (i=0;i<n;++i) {
-			dx = p[i].r[0] - kd->pGroup[iGroup].rel[0];
-			dy = p[i].r[1] - kd->pGroup[iGroup].rel[1];
-			dz = p[i].r[2] - kd->pGroup[iGroup].rel[2];
+		for (i=0,pi=pkdn->pLower;i<n;++i,++pi) {
+			dx = kd->pInit[pi].r[0] - kd->pGroup[iGroup].rel[0];
+			dy = kd->pInit[pi].r[1] - kd->pGroup[iGroup].rel[1];
+			dz = kd->pInit[pi].r[2] - kd->pGroup[iGroup].rel[2];
 			if (dx > hx) dx -= 2*hx;
 			if (dx <= -hx) dx += 2*hx;
 			if (dy > hy) dy -= 2*hy;
 			if (dy <= -hy) dy += 2*hy;
 			if (dz > hz) dz -= 2*hz;
 			if (dz <= -hz) dz += 2*hz;
-			p[i].r[0] = dx;
-			p[i].r[1] = dy;
-			p[i].r[2] = dz;
+			q[i] = kd->pInit[pi];
+			q[i].r[0] = dx;
+			q[i].r[1] = dy;
+			q[i].r[2] = dz;
 			}
 		/*
 		 ** Calculate center of mass and center of mass 
@@ -1052,10 +1199,10 @@ void kdUnbind(KD kd,int iSoftType,float fScoop, int bMoveAll)
 			vcm[j] = 0.0;
 			}
 		for (i=0;i<n;++i) {
-			dMass += p[i].fMass;
+			dMass += q[i].fMass;
 			for (j=0;j<3;++j) {
-				rcm[j] += p[i].fMass*p[i].r[j];
-				vcm[j] += p[i].fMass*p[i].v[j];
+				rcm[j] += q[i].fMass*q[i].r[j];
+				vcm[j] += q[i].fMass*q[i].v[j];
 				}
 			}
 		for (j=0;j<3;++j) {
@@ -1064,11 +1211,10 @@ void kdUnbind(KD kd,int iSoftType,float fScoop, int bMoveAll)
 			}
 		pdPot = (double *)malloc(n*sizeof(double));
 		assert(pdPot != NULL);
-		kdCellPot(kd,pkdn,iSoftType,pdPot);
-		if (!bMoveAll && (kd->inType == DARK|GAS
-				  || kd->inType == DARK|GAS|STAR
-				  || kd->inType == DARK|STAR)) {
-			kdAddScoopPot(kd,pkdn,kd->pGroup[iGroup].rCenter,fScoop,
+		kdCellPot(kd,q,n,iSoftType,pdPot);
+		if ((kd->inType == DARK|GAS && !bGasAndDark) || 
+			kd->inType == DARK|GAS|STAR || kd->inType == DARK|STAR) {
+			kdAddScoopPot(kd,q,n,kd->pGroup[iGroup].rCenter,fScoop,
 						  kd->pGroup[iGroup].rel,iSoftType,pdPot);
 			}
 		while (1) {
@@ -1080,7 +1226,7 @@ void kdUnbind(KD kd,int iSoftType,float fScoop, int bMoveAll)
 			for (i=0;i<n;++i) {
 				dv2 = 0.0;
 				for (j=0;j<3;++j) {
-					dv = fShift*(p[i].v[j]-vcm[j]) + fCosmo*(p[i].r[j]-rcm[j]);
+					dv = fShift*(q[i].v[j]-vcm[j]) + fCosmo*(q[i].r[j]-rcm[j]);
 					dv2 += dv*dv;
 					}
 				fTot = 0.5*dv2 - pdPot[i]*(1.0+kd->z);
@@ -1093,14 +1239,14 @@ void kdUnbind(KD kd,int iSoftType,float fScoop, int bMoveAll)
 			/*
 			 ** Unbind particle iBig!
 			 */
-			kd->piGroup[p[iBig].iOrder] = 0;
+			kd->piGroup[q[iBig].iOrder] = 0;
 			/*
 			 ** Adjust rcm and vcm.
 			 */
-			dMass -= p[iBig].fMass;
+			dMass -= q[iBig].fMass;
 			for (j=0;j<3;++j) {
-				rcm[j] += p[iBig].fMass/dMass*(rcm[j]-p[iBig].r[j]);
-				vcm[j] += p[iBig].fMass/dMass*(vcm[j]-p[iBig].v[j]);
+				rcm[j] += q[iBig].fMass/dMass*(rcm[j]-q[iBig].r[j]);
+				vcm[j] += q[iBig].fMass/dMass*(vcm[j]-q[iBig].v[j]);
 				}
 			++nUnbind;
 			--n;
@@ -1108,9 +1254,9 @@ void kdUnbind(KD kd,int iSoftType,float fScoop, int bMoveAll)
 			/*
 			 ** Swap particle iBig and last, swap also corresp. potential E.
 			 */
-			t = p[iBig];
-			p[iBig] = p[n];
-			p[n] = t;
+			t = q[iBig];
+			q[iBig] = q[n];
+			q[n] = t;
 			dPot = pdPot[iBig];
 			pdPot[iBig] = pdPot[n];
 			pdPot[n] = dPot;
@@ -1118,41 +1264,15 @@ void kdUnbind(KD kd,int iSoftType,float fScoop, int bMoveAll)
 				/*
 				 ** Modify the potential energies.
 				 */
-				kdSubPot(kd,&kd->kdGroup[iGroup],&p[n],iSoftType,pdPot);
+				kdSubPot(kd,q,n,&q[n],iSoftType,pdPot);
 				}
 			}
 		free(pdPot);		
+		free(q);
 		kd->pGroup[iGroup].fMass = dMass;
-		fRadMax = 0.0;
-		for (i=0;i<n;++i) {
-			dx = p[i].r[0] - rcm[0];
-			dy = p[i].r[1] - rcm[1];
-			dz = p[i].r[2] - rcm[2];
-			fRad = sqrt(dx*dx + dy*dy + dz*dz);
-			if (fRad > fRadMax) fRadMax = fRad;
-			}
-		kd->pGroup[iGroup].fRadius = fRadMax;
 		for (j=0;j<3;++j) {
-			rcm[j] += kd->pGroup[iGroup].rel[j];
-			if (rcm[j] > kd->fCenter[j]+0.5*kd->fPeriod[j])
-				rcm[j] -= kd->fPeriod[j];
-			if (rcm[j] <= kd->fCenter[j]-0.5*kd->fPeriod[j])
-				rcm[j] += kd->fPeriod[j];
-			kd->pGroup[iGroup].rcm[j] = rcm[j];
 			kd->pGroup[iGroup].vcm[j] = vcm[j];
 			}
-		/*
-		 ** Reset particle coordinates.
-		 */
-		for (i=0;i<n;++i) {
-		    for (j=0;j<3;++j) {
-			p[i].r[j] += kd->pGroup[iGroup].rel[j];
-			if (p[i].r[j] > kd->fCenter[j]+0.5*kd->fPeriod[j])
-			    p[i].r[j] -= kd->fPeriod[j];
-			if (p[i].r[j] <= kd->fCenter[j]-0.5*kd->fPeriod[j])
-			    p[i].r[j] += kd->fPeriod[j];
-			}
-		    }
 		}
 	printf("Number of particles Unbound:%d\n",nUnbind);
 	fflush(stdout);
@@ -1291,11 +1411,38 @@ void kdOutVector(KD kd,char *pszFile)
 
 void kdWriteGroup(KD kd,char *pszFile)
 {
+	PINIT *p;
+	int iGroup;
+	float del,fRad;
 	FILE *fp;
 	int i,j;
 	struct dump h;
 	struct star_particle sp;
 
+	/*
+	 ** Calculate the radius of each group.
+	 */
+	for (i=1;i<kd->nGroup;++i) {
+		kd->pGroup[i].fRadius = 0.0;
+		}
+	p = kd->pInit;
+	for (i=0;i<kd->nParticles;++i) {
+		iGroup = kd->piGroup[p[i].iOrder];
+		if (!iGroup) continue;
+		fRad = 0.0;
+		for (j=0;j<3;++j) {
+			del = p[i].r[j] - kd->pGroup[iGroup].rCenter[j];
+			if (del > 0.5*kd->fPeriod[j]) del -= kd->fPeriod[j];
+			if (del <= -0.5*kd->fPeriod[j]) del += kd->fPeriod[j];
+			fRad += del*del;
+			}
+		fRad = sqrt(fRad);
+		if (fRad > kd->pGroup[iGroup].fRadius) 
+			kd->pGroup[iGroup].fRadius = fRad;
+		}
+	/*
+	 ** Now output the GTP file.
+	 */
 	fp = fopen(pszFile,"wb");
 	assert(fp != NULL);
 	h.nbodies = kd->nGroup-1;
@@ -1320,6 +1467,7 @@ void kdWriteGroup(KD kd,char *pszFile)
 	fclose(fp);
 	}
 
+
 int CmpRadius(const void *p1,const void *p2)
 {
 	PINIT *a = (PINIT *)p1;
@@ -1332,152 +1480,91 @@ int CmpRadius(const void *p1,const void *p2)
 	return 0;
 	}
 
-void kdAddScoopMass(KD kd,KDN *pkdn,float *ri,float fScoop,float *rel,
-				   int iSoftType,double *pdPot)
-{
-	KDN *c;
-	PINIT *p;
-	PINIT *pGroup;
-	int pj,cp,i,n;
-	float dx,dy,dz,x,y,z,lx,ly,lz,sx,sy,sz,fDist2,fBall2,nx,ny,nz;
-	float d2,twoh,dir;
-
-	c = kd->kdNodes;
-	p = kd->pInit;
-	n = pkdn->pUpper - pkdn->pLower + 1;
-	pGroup = &kd->pInit[pkdn->pLower]; 
-	fBall2 = fScoop*fScoop;
-	lx = kd->fPeriod[0];
-	ly = kd->fPeriod[1];
-	lz = kd->fPeriod[2];
-	x = ri[0];
-	y = ri[1];
-	z = ri[2];
-	cp = ROOT;
-	while (1) {
-		INTERSECT(c,cp,fBall2,lx,ly,lz,x,y,z,sx,sy,sz);
-		/*
-		 ** We have an intersection to test.
-		 */
-		if (c[cp].iDim >= 0) {
-			cp = LOWER(cp);
-			continue;
-			}
-		else {
-			for (pj=c[cp].pLower;pj<=c[cp].pUpper;++pj) {
-				dx = sx - p[pj].r[0];
-				dy = sy - p[pj].r[1];
-				dz = sz - p[pj].r[2];
-				fDist2 = dx*dx + dy*dy + dz*dz;
-				if (fDist2 < fBall2) {
-					/*
-					 ** Add this particle's potential to all the particles in
-					 ** pGroup.
-					 */
-					nx = p[pj].r[0] - rel[0];
-					ny = p[pj].r[1] - rel[1];
-					nz = p[pj].r[2] - rel[2];
-					if (nx > 0.5*lx) nx -= lx;
-					if (nx <= -0.5*lx) nx += lx;
-					if (ny > 0.5*ly) ny -= ly;
-					if (ny <= -0.5*ly) ny += ly;
-					if (nz > 0.5*lz) nz -= lz;
-					if (nz <= -0.5*lz) nz += lz;					
-					for (i=0;i<n;++i) {
-						dx = nx - pGroup[i].r[0];
-						dy = ny - pGroup[i].r[1];
-						dz = nz - pGroup[i].r[2];
-						d2 = dx*dx + dy*dy + dz*dz;
-						twoh = p[pj].fSoft + pGroup[i].fSoft;
-						switch (iSoftType) {
-						case PLUMMER:
-							dir = 1.0/sqrt(d2 + 0.25*twoh*twoh);
-							break;
-						default:
-						case SPLINE:
-							SPLINE_POT(d2,twoh,dir);
-							}
-						pdPot[i] += kd->G*p[pj].fMass*dir;
-						}
-					}
-				}
-			}
-	GetNextCell:
-		SETNEXT(cp);
-		if (cp == ROOT) break;
-		}
-	}
 
 void kdOutStats(KD kd,char *pszFile, float fDensMin, float fTempMax)
 {
 	FILE *fp;
-	int i,j;
+	int iGroup,i,pi,j,k,n;
+	PINIT *q;
+	KDN *pkdn;
+	float hx,hy,hz,dx,dy,dz;
 	float fTotMass, fGasMass, fStarMass, fVcirc;
 	float flVcirc;
 	float fmVcirc;
-	float fTotMassSc, fGasMassSc, fStarMassSc, fVcircSc;
 
 	fp = fopen(pszFile,"w");
 	assert(fp != NULL);
-
-/*
- * Particles should be in Group Order.
- */
-	for (i=1;i<kd->nGroup;++i) {
-	    int n;
-	    KDN *pkdn;
-	    PINIT *p;
-
-	    pkdn = &kd->kdGroup[i];
-	    p = &kd->pInit[pkdn->pLower];
-	    n = pkdn->pUpper-pkdn->pLower+1;
-/*
- * Sort particles by distance from center.
- */
-	    for(j = 0; j < n; j++) {
-		float radius2;
-		int k;
-			/* N.B.  I am reusing fBall2 */
-
-		radius2 = 0.0;
-		for(k = 0; k < 3; k++)
-		  {
-		    radius2 += (p[j].r[k] - kd->pGroup[i].rCenter[k])
-			*(p[j].r[k] - kd->pGroup[i].rCenter[k]);
-		  }
-		p[j].fBall2 = radius2;
-	    }
-	    qsort(p, n, sizeof(*p), CmpRadius);
-
+	hx = 0.5*kd->fPeriod[0];
+	hy = 0.5*kd->fPeriod[1];
+	hz = 0.5*kd->fPeriod[2];
+	/*
+	 * Particles should be in Group Order.
+	 */
+	for (iGroup=1;iGroup<kd->nGroup;++iGroup) {
+		pkdn = &kd->kdGroup[iGroup];
+		n = pkdn->pUpper-pkdn->pLower+1;
+		/*
+		 ** Make temporary particles to hold new positions
+		 */
+		q = malloc(n*sizeof(PINIT));
+		assert(q != NULL);
+		/*
+		 ** Make all group particles have coordinates relative to 
+		 ** a group reference point, given by pGroup[i].rel.
+		 */
+		for (i=0,pi=pkdn->pLower;i<n;++i,++pi) {
+			dx = kd->pInit[pi].r[0] - kd->pGroup[iGroup].rCenter[0];
+			dy = kd->pInit[pi].r[1] - kd->pGroup[iGroup].rCenter[1];
+			dz = kd->pInit[pi].r[2] - kd->pGroup[iGroup].rCenter[2];
+			if (dx > hx) dx -= 2*hx;
+			if (dx <= -hx) dx += 2*hx;
+			if (dy > hy) dy -= 2*hy;
+			if (dy <= -hy) dy += 2*hy;
+			if (dz > hz) dz -= 2*hz;
+			if (dz <= -hz) dz += 2*hz;
+			q[i] = kd->pInit[pi];
+			q[i].r[0] = dx;
+			q[i].r[1] = dy;
+			q[i].r[2] = dz;
+			}
+		/*
+		 * Sort particles by distance from center.
+		 */
+	    for(j = 0; j < n; ++j) {
+			float radius2 = 0.0;
+			for(k = 0; k < 3; ++k) {
+				radius2 += q[j].r[k]*q[j].r[k];
+				}
+			q[j].fBall2 = radius2;
+			}
+	    qsort(q,n,sizeof(PINIT),CmpRadius);
 	    fGasMass = fStarMass = fTotMass = fVcirc = 0.0;
 	    fmVcirc = 0.0;
 	    for(j = 0; j < n; j++) {
-		fTotMass += p[j].fMass;
-		if(kd->G*fTotMass/sqrt(p[j].fBall2) > fVcirc)
-		    fVcirc = kd->G*fTotMass/sqrt(p[j].fBall2);
-		if (kdParticleType(kd,p[j].iOrder) == GAS &&
-		    p[j].fDensity >= fDensMin && p[j].fTemp <= fTempMax)
-		    fGasMass += p[j].fMass;
-		if (kdParticleType(kd,p[j].iOrder) == STAR)
-		    fStarMass += p[j].fMass;
-		if(j == n/2)
-		    fmVcirc = kd->G*fTotMass/sqrt(p[j].fBall2); 
-	    }
-	    flVcirc = sqrt(kd->G*fTotMass/sqrt(p[n-1].fBall2));
-	    fGasMassSc = fStarMassSc = fTotMassSc = fVcircSc = 0.0;
+			fTotMass += q[j].fMass;
+			if(kd->G*fTotMass/sqrt(q[j].fBall2) > fVcirc)
+				fVcirc = kd->G*fTotMass/sqrt(q[j].fBall2);
+			if (kdParticleType(kd,q[j].iOrder) == GAS &&
+				q[j].fDensity >= fDensMin && q[j].fTemp <= fTempMax)
+				fGasMass += q[j].fMass;
+			if (kdParticleType(kd,q[j].iOrder) == STAR)
+				fStarMass += q[j].fMass;
+			if(j == n/2)
+				fmVcirc = kd->G*fTotMass/sqrt(q[j].fBall2); 
+			}
+	    flVcirc = sqrt(kd->G*fTotMass/sqrt(q[n-1].fBall2));
 	    fprintf(fp, "%d %d %g %g %g %g %g %g %g %g %g %g %g %g %g\n", i, n,
-		    fTotMass, fGasMass, fStarMass, sqrt(fVcirc),
-		    fmVcirc, flVcirc, sqrt(p[n-1].fBall2),
-		    kd->pGroup[i].rCenter[0],
-		    kd->pGroup[i].rCenter[1],
-		    kd->pGroup[i].rCenter[2], 
-		    kd->pGroup[i].vcm[0],
-		    kd->pGroup[i].vcm[1],
-		    kd->pGroup[i].vcm[2]);
-		    
-	}
+				fTotMass, fGasMass, fStarMass, sqrt(fVcirc),
+				fmVcirc, flVcirc, sqrt(q[n-1].fBall2),
+				kd->pGroup[i].rCenter[0],
+				kd->pGroup[i].rCenter[1],
+				kd->pGroup[i].rCenter[2], 
+				kd->pGroup[i].vcm[0],
+				kd->pGroup[i].vcm[1],
+				kd->pGroup[i].vcm[2]);
+		}
 	fclose(fp);
-}
+	}
 
 
 void kdFinish(KD kd)

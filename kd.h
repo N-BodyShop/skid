@@ -27,7 +27,7 @@ typedef struct pInitial {
 	float v[3];
 	float fMass;
 	float fSoft;
-	float fTemp;
+	float fTemp;		/* Could get rid of this */
 	float fBall2;
 	float fDensity;
 	int iOrder;
@@ -41,12 +41,12 @@ typedef struct pMoved {
 	} PMOVE;
 
 typedef struct pGroup {
-	float rcm[3];
-	float vcm[3];
-	float rCenter[3];
 	float rel[3];
+	float rCenter[3];
+	float vcm[3];
 	float fMass;
 	float fRadius;
+	int nMembers;
 	} PGROUP;
 
 typedef struct bndBound {
@@ -319,26 +319,29 @@ int kdParticleType(KD,int);
 int kdReadTipsy(KD,FILE *);
 int kdBuildTree(KD);
 int kdBuildMoveTree(KD);
-void kdInitMove(KD kd,float fDensMin,float fTempMax, float fMassMax,
-		float fCvg, int bMoveAll);
-int kdScatterActive(KD kd, int bMoveAll);
+void kdInitMove(KD,float,float,float,float,int);
+int kdScatterActive(KD,int);
 int kdScatterCut(KD);
 void kdMoveParticles(KD,float);
 int kdPruneInactive(KD,float);
 void kdReactivateMove(KD);
 void kdFoF(KD,float);
 void kdInGroup(KD,char *);
+void kdInitpGroup(KD);
+void kdCalcCenter(KD);
+void kdReadCenter(KD,char *);
 void kdGroupOrder(KD);
 void kdTooSmall(KD,int);
-void kdUnbind(KD kd,int iSoftType,float fScoop, int bMoveAll);
+void kdUnbind(KD,int,float,int);
 void kdOutGroup(KD,char *);
 void kdOutDensity(KD,char *);
 void kdOutVector(KD,char *);
 void kdWriteGroup(KD,char *);
-void kdOutStats(KD kd,char *pszFile, float fDensMin, float fTempMax);
+void kdOutStats(KD kd,char *,float,float);
 void kdFinish(KD);
 
 #endif
+
 
 
 

@@ -44,6 +44,7 @@ void smBallSearch(SMX smx,float fBall2,float *ri)
 	PQ *pq;
 
 	c = smx->kd->kdNodes;
+	if (!c) return;
 	p = smx->kd->pInit;
 	pq = smx->pqHead;
 	x = ri[0];
@@ -125,56 +126,6 @@ void smBallSearch(SMX smx,float fBall2,float *ri)
 	}
 
 
-int smBallGather(SMX smx,float fBall2,float *ri,NN *nnList)
-{
-	KDN *c;
-	PMOVE *p;
-	int pj,nCnt,cp;
-	float dx,dy,dz,x,y,z,lx,ly,lz,sx,sy,sz,fDist2;
-
-	c = smx->kd->kdNodes;
-	p = smx->kd->pMove;
-	lx = smx->kd->fPeriod[0];
-	ly = smx->kd->fPeriod[1];
-	lz = smx->kd->fPeriod[2];
-	x = ri[0];
-	y = ri[1];
-	z = ri[2];
-	nCnt = 0;
-	cp = ROOT;
-	while (1) {
-		INTERSECT(c,cp,fBall2,lx,ly,lz,x,y,z,sx,sy,sz);
-		/*
-		 ** We have an intersection to test.
-		 */
-		if (c[cp].iDim >= 0) {
-			cp = LOWER(cp);
-			continue;
-			}
-		else {
-			for (pj=c[cp].pLower;pj<=c[cp].pUpper;++pj) {
-				dx = sx - p[pj].r[0];
-				dy = sy - p[pj].r[1];
-				dz = sz - p[pj].r[2];
-				fDist2 = dx*dx + dy*dy + dz*dz;
-				if (fDist2 < fBall2) {
-					nnList[nCnt].p = pj;
-					nnList[nCnt].fDist2 = fDist2;
-					nnList[nCnt].dx = dx;
-					nnList[nCnt].dy = dy;
-					nnList[nCnt].dz = dz;
-					++nCnt;
-					}
-				}
-			}
-	GetNextCell:
-		SETNEXT(cp);
-		if (cp == ROOT) break;
-		}
-	return(nCnt);
-	}
-
-
 void smDensityInit(SMX smx)
 {
 	KDN *c;
@@ -192,6 +143,10 @@ void smDensityInit(SMX smx)
 		p[pi].fBall2 = -1.0;
 		p[pi].fDensity = 0.0;
 		}
+	/*
+	 ** If there was no tree then the desities can remain 0.0.
+	 */
+	if (!c) return;
 	/*
 	 ** Clear Mark array.
 	 */
@@ -314,6 +269,57 @@ void smDensityInit(SMX smx)
 		}
  DoneDensity:
 	;
+	}
+
+
+int smBallGather(SMX smx,float fBall2,float *ri,NN *nnList)
+{
+	KDN *c;
+	PMOVE *p;
+	int pj,nCnt,cp;
+	float dx,dy,dz,x,y,z,lx,ly,lz,sx,sy,sz,fDist2;
+
+	c = smx->kd->kdNodes;
+	if (!c) return(0);
+	p = smx->kd->pMove;
+	lx = smx->kd->fPeriod[0];
+	ly = smx->kd->fPeriod[1];
+	lz = smx->kd->fPeriod[2];
+	x = ri[0];
+	y = ri[1];
+	z = ri[2];
+	nCnt = 0;
+	cp = ROOT;
+	while (1) {
+		INTERSECT(c,cp,fBall2,lx,ly,lz,x,y,z,sx,sy,sz);
+		/*
+		 ** We have an intersection to test.
+		 */
+		if (c[cp].iDim >= 0) {
+			cp = LOWER(cp);
+			continue;
+			}
+		else {
+			for (pj=c[cp].pLower;pj<=c[cp].pUpper;++pj) {
+				dx = sx - p[pj].r[0];
+				dy = sy - p[pj].r[1];
+				dz = sz - p[pj].r[2];
+				fDist2 = dx*dx + dy*dy + dz*dz;
+				if (fDist2 < fBall2) {
+					nnList[nCnt].p = pj;
+					nnList[nCnt].fDist2 = fDist2;
+					nnList[nCnt].dx = dx;
+					nnList[nCnt].dy = dy;
+					nnList[nCnt].dz = dz;
+					++nCnt;
+					}
+				}
+			}
+	GetNextCell:
+		SETNEXT(cp);
+		if (cp == ROOT) break;
+		}
+	return(nCnt);
 	}
 
 

@@ -5,14 +5,11 @@
 
 
 
-void kdCellPot(KD kd,KDN *pkdn,int iSoftType,double *pdPot)
+void kdCellPot(KD kd,PINIT *p,int n,int iSoftType,double *pdPot)
 {
-	PINIT *p;
-	int i,j,n;
+	int i,j;
 	float x,y,z,dx,dy,dz,d2,twoh,dir;
 
-	p = &kd->pInit[pkdn->pLower];
-	n = pkdn->pUpper-pkdn->pLower+1;
 	for (i=0;i<n;++i) pdPot[i] = 0.0;
 	for (i=0;i<(n-1);++i) {
 		x = p[i].r[0];
@@ -39,14 +36,11 @@ void kdCellPot(KD kd,KDN *pkdn,int iSoftType,double *pdPot)
 	}
 
 
-void kdSubPot(KD kd,KDN *pkdn,PINIT *ps,int iSoftType,double *pdPot)
+void kdSubPot(KD kd,PINIT *p,int n,PINIT *ps,int iSoftType,double *pdPot)
 {
-	PINIT *p;
-	int i,n;
+	int i;
 	float dx,dy,dz,d2,twoh,dir;
 
-	p = &kd->pInit[pkdn->pLower];
-	n = pkdn->pUpper-pkdn->pLower+1;
 	for (i=0;i<n;++i) {
 		dx = ps->r[0] - p[i].r[0];
 		dy = ps->r[1] - p[i].r[1];
@@ -66,27 +60,25 @@ void kdSubPot(KD kd,KDN *pkdn,PINIT *ps,int iSoftType,double *pdPot)
 	}
 
 
-void kdAddScoopPot(KD kd,KDN *pkdn,float *ri,float fScoop,float *rel,
+void kdAddScoopPot(KD kd,PINIT *pGroup,int n,float *ri,float fScoop,float *rel,
 				   int iSoftType,double *pdPot)
 {
 	KDN *c;
 	PINIT *p;
-	PINIT *pGroup;
-	int pj,cp,i,n;
+	int pj,cp,i;
 	float dx,dy,dz,x,y,z,lx,ly,lz,sx,sy,sz,fDist2,fBall2,nx,ny,nz;
 	float d2,twoh,dir;
 
 	c = kd->kdNodes;
+	if (!c) return;
 	p = kd->pInit;
-	n = pkdn->pUpper - pkdn->pLower + 1;
-	pGroup = &kd->pInit[pkdn->pLower]; 
-	fBall2 = fScoop*fScoop;
 	lx = kd->fPeriod[0];
 	ly = kd->fPeriod[1];
 	lz = kd->fPeriod[2];
 	x = ri[0];
 	y = ri[1];
 	z = ri[2];
+	fBall2 = fScoop*fScoop;
 	cp = ROOT;
 	while (1) {
 		INTERSECT(c,cp,fBall2,lx,ly,lz,x,y,z,sx,sy,sz);
@@ -141,6 +133,7 @@ void kdAddScoopPot(KD kd,KDN *pkdn,float *ri,float fScoop,float *rel,
 		if (cp == ROOT) break;
 		}
 	}
+
 
 
 
