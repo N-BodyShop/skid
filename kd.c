@@ -658,14 +658,6 @@ int kdInitMove(KD kd,float fDensMin,float fTempMax,float fMassMax,
 			++nCnt;
 			}
 		}
-	/*
-	 ** Change the fBall2 of all the unmoved particles to have a minimum
-	 ** hSmooth of fCvg.
-	 */
-	fCvg2 = fCvg*fCvg;
-	for (pi=0;pi<kd->nParticles;++pi) {
-		if (kd->pInit[pi].fBall2 < fCvg2) kd->pInit[pi].fBall2 = fCvg2;
-		}
 	if (kd->bOutDiag) puts("<< kdInitMove()");
 	fflush(stdout);
 	return(kd->nActive);

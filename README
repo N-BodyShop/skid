@@ -2,12 +2,12 @@
 
 				SKID (Spline Kernel Interpolative Denmax)
 					
-							VERSION 1.3
+							VERSION 1.4.1
 
 
 				A Group Finder for N-body Simulations
 
-				Stadel Release 1.3: February 10, 1996
+				Stadel Release 1.4.1: Dec. 2000
 
 Changes from v1.1:
 	o 	Fixed bug in tree building, this bug only affected cases where
@@ -31,6 +31,15 @@ Changes from v1.2:
 		The reason for this is because we know this should usually be a good 
 		technique, but we cannot prove that it will always be correct.
 
+Changes from v1.3:
+	o	Code is now much more modular and handles Lambda cosmologies.
+	o	Standard TIPSY binaries are now used with the -std flag.
+
+Version 1.4.1:
+	o	Bug fix: don't set minimum scattering radius to fCvg. This
+		is a very bad idea and leads to extremely bad performance 
+		with large tau parameter. It is also not well motivated.
+
 Included are:
 	Makefile
 	main.c
@@ -45,7 +54,6 @@ Included are:
 	dark.std
 	demo
 	man1/skid.1
-	cat1/skid.1
 
 For detailed information read the man page (either cat1/skid.1 or
 man1/skid.1). A small demo of a 32768 particle input file has 
@@ -65,7 +73,7 @@ To run the demo:
 
 To get further information contact:
 
-	hpccsoft@astro.washington.edu
+	stadel@astro.washington.edu
 
 
 

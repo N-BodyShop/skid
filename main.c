@@ -69,7 +69,7 @@ int main(int argc,char **argv)
 	int nScat;
 	int bOutDiag;
 
-	printf("SKID v1.4: Joachim Stadel, Aug. 1999\n");
+	printf("SKID v1.4.1: Joachim Stadel, Dec. 2000\n");
 	/*
 	 ** Bucket size set to 16, user cannot affect this!
 	 */
