@@ -3,7 +3,18 @@
 #include <math.h>
 #include <assert.h>
 
+#include "runge.h"
+
+#ifdef CRAY_T3D
+#include "hyperlib.h"
+#endif
+
 #include "cosmo.h"
+
+/*
+ * Cosmological module for PKDGRAV.
+ * N.B.  This code is being shared with skid and the I.C. generator.
+ */
 
 void csmInitialize(CSM *pcsm) 
 {
@@ -16,6 +27,8 @@ void csmInitialize(CSM *pcsm)
     csm->dOmega0 = 0.0;
     csm->dLambda = 0.0;
     csm->dOmegaRad = 0.0;
+    csm->dOmegab = 0.0;
+    csm->dQuintess = 0.0;
     csm->bComove = 0;
     
     *pcsm = csm;
@@ -27,22 +40,33 @@ double dRombergO(void *CTX, double (*func)(void *, double), double a,
 		 double b, double eps);
 /*
  ** The cosmological equation of state is entirely determined here.  We
- ** will derive all other quantities from this function.
+ ** will derive all other quantities from these two functions.
  */
 
 double csmExp2Hub(CSM csm, double dExp)
 {
     double dOmegaCurve = 1.0 - csm->dOmega0 -
-	csm->dLambda - csm->dOmegaRad;
+	csm->dLambda - csm->dOmegaRad - csm->dQuintess;
     
     assert(dExp > 0.0);
     return csm->dHubble0
 	*sqrt(csm->dOmega0*dExp
 	      + dOmegaCurve*dExp*dExp
 	      + csm->dOmegaRad
+	      + csm->dQuintess*dExp*dExp*sqrt(dExp)
 	      + csm->dLambda*dExp*dExp*dExp*dExp)/(dExp*dExp);
     }
 
+/*
+ ** Return a double dot over a.
+ */
+double csmExpDot2(CSM csm, double dExp)
+{
+    return csm->dHubble0*csm->dHubble0
+	*(csm->dLambda  - 0.5*csm->dOmega0/(dExp*dExp*dExp)
+	  + 0.25*csm->dQuintess/(dExp*sqrt(dExp))
+	  - csm->dOmegaRad/(dExp*dExp*dExp*dExp));
+    }
 
 double csmTime2Hub(CSM csm,double dTime)
 {
@@ -72,7 +96,8 @@ double csmExp2Time(CSM csm,double dExp)
 		 */
 		assert(0);
 		}
-	if(csm->dLambda == 0.0 && csm->dOmegaRad == 0.0) {
+	if(csm->dLambda == 0.0 && csm->dOmegaRad == 0.0 &&
+	   csm->dQuintess == 0.0) {
 	    if (dOmega0 == 1.0) {
 		    assert(dHubble0 > 0.0);
 		    if (dExp == 0.0) return(0.0);
@@ -151,6 +176,9 @@ double csmComoveDriftInt(CSM csm, double dIExp)
     return -dIExp/(csmExp2Hub(csm, 1.0/dIExp));
     }
 
+/*
+ ** Make the substitution y = 1/a to integrate da/(a^2*H(a))
+ */
 double csmComoveKickInt(CSM csm, double dIExp)
 {
     return -1.0/(csmExp2Hub(csm, 1.0/dIExp));
@@ -166,7 +194,8 @@ double csmComoveDriftFac(CSM csm,double dTime,double dDelta)
 	double a0,A,B,a1,a2,eta1,eta2;
 
 	if (!csm->bComove) return(dDelta);
-	else if(csm->dLambda == 0.0 && csm->dOmegaRad == 0.0) {
+	else if(csm->dLambda == 0.0 && csm->dOmegaRad == 0.0 &&
+		csm->dQuintess == 0.0) {
 		a1 = csmTime2Exp(csm,dTime);
 		a2 = csmTime2Exp(csm,dTime+dDelta);
 		if (dOmega0 == 1.0) {
@@ -230,7 +259,8 @@ double csmComoveKickFac(CSM csm,double dTime,double dDelta)
 	double a0,A,B,a1,a2,eta1,eta2;
 
 	if (!csm->bComove) return(dDelta);
-	else if(csm->dLambda == 0.0 && csm->dOmegaRad == 0.0) {
+	else if(csm->dLambda == 0.0 && csm->dOmegaRad == 0.0
+		&& csm->dQuintess == 0.0) {
 		a1 = csmTime2Exp(csm,dTime);
 		a2 = csmTime2Exp(csm,dTime+dDelta);
 		if (dOmega0 == 1.0) {
@@ -283,3 +313,135 @@ double csmComoveKickFac(CSM csm,double dTime,double dDelta)
 	    }
 	}
 
+double csmComoveLookbackTime2Exp(CSM csm,double dComoveTime)
+{
+	if (!csm->bComove) return(1.0);
+	else {
+	    double dExpOld = 0.0;
+	    double dT0 = csmExp2Time(csm, 1.0);
+	    double dTime = dT0 - dComoveTime;
+	    double dExpNew;
+	    int it = 0;
+	    
+	    if(dTime < EPSCOSMO) dTime = EPSCOSMO;
+	    dExpNew = csmTime2Exp(csm, dTime);
+	    /*
+	     * Root find with Newton's method.
+	     */
+	    do {
+		double dTimeNew = csmExp2Time(csm, dExpNew);
+	    	double f = dComoveTime
+		    - csmComoveKickFac(csm, dTimeNew, dT0 - dTimeNew);
+		double fprime = -1.0/(dExpNew*dExpNew*csmExp2Hub(csm, dExpNew));
+		dExpOld = dExpNew;
+		dExpNew += f/fprime;
+		it++;
+		assert(it < 20);
+		}
+	    while (fabs(dExpNew - dExpOld)/dExpNew > EPSCOSMO);
+	    return dExpNew;
+	    }
+	}
+
+#if 0
+/*
+ * Code for generating linear growth factors.
+ * This is taken from Carroll, Press & Turner Ann. Rev. (1992)
+ */
+
+/*
+ * The following will not work with general quintessence models.
+ * It is replaced with the code that follows.
+ */
+double csmGrowthFacInt(CSM csm, double dExp)
+{
+    return pow(dExp*csmExp2Hub(csm, dExp), -3.0);
+    }
+
+double csmGrowthFac(CSM csm, double dExp)
+{
+    return 2.5*csm->dOmega0*csm->dHubble0*csm->dHubble0*csmExp2Hub(csm, dExp)
+	*dRombergO(csm, (double (*)(void *, double)) csmGrowthFacInt,
+		   0.0, dExp, EPSCOSMO);
+    }
+
+/*
+ * Time derivative of the growth factor.
+ */
+
+double csmGrowthFacDot(CSM csm, double dExp)
+{
+    double dHubble = csmExp2Hub(csm, dExp);
+    
+    return 2.5*csm->dOmega0*csm->dHubble0*csm->dHubble0
+	*((csmExpDot2(csm, dExp) - dHubble*dHubble)
+	  *dRombergO(csm, (double (*)(void *, double)) csmGrowthFacInt,
+		     0.0, dExp, EPSCOSMO)
+	  + 1.0/(dExp*dExp*dHubble));
+    }
+#endif
+
+/*
+ * delta[1] => deltadot
+ */
+void csmGrowthFacDeriv(CSM csm, double dlnExp, double *dlnDelta, double
+		       *dlnDeltadot)
+{
+    double dExp = exp(dlnExp);
+    double dHubble = csmExp2Hub(csm, dExp);
+    
+    dlnDeltadot[0] = dlnDelta[1];
+    dlnDeltadot[1] = -dlnDelta[1]*dlnDelta[1]
+	- dlnDelta[1]*(1.0 + csmExpDot2(csm, dExp)/(dHubble*dHubble))
+	+ 1.5*csmExp2Om(csm, dExp);
+    }
+    
+double csmGrowthFac(CSM csm, double dExp)
+{
+    const double dlnExpStart = -15;
+    const int nSteps = 200;
+    double dlnExp = log(dExp);
+    double dDStart[2];
+    double dDEnd[2];
+    
+    assert(dlnExp > dlnExpStart);
+    
+    dDStart[0] = dlnExpStart;
+    dDStart[1] = 1.0;	/* Growing mode */
+
+    RungeKutta(csm, (void (*)(void *, double, double *, double*))
+	       csmGrowthFacDeriv, 2, dlnExpStart, dDStart, dlnExp, dDEnd,
+	       nSteps);
+    return exp(dDEnd[0]);
+    }
+
+double csmGrowthFacDot(CSM csm, double dExp)
+{
+    const double dlnExpStart = -15;
+    const int nSteps = 200;
+    double dlnExp = log(dExp);
+    double dDStart[2];
+    double dDEnd[2];
+    
+    assert(dlnExp > dlnExpStart);
+    
+    dDStart[0] = dlnExpStart;
+    dDStart[1] = 1.0;	/* Growing mode */
+
+    RungeKutta(csm, (void (*)(void *, double, double *, double*))
+	       csmGrowthFacDeriv, 2, dlnExpStart, dDStart, dlnExp, dDEnd,
+	       nSteps);
+    return dDEnd[1]*csmExp2Hub(csm, dExp)*exp(dDEnd[0]);
+    }
+
+/*
+ * expansion dependence of Omega_matter
+ */
+
+double csmExp2Om(CSM csm, double dExp)
+{
+    double dHubble = csmExp2Hub(csm, dExp);
+    
+    return csm->dOmega0*csm->dHubble0*csm->dHubble0
+	/(dExp*dExp*dExp*dHubble*dHubble);
+    }

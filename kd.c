@@ -82,12 +82,14 @@ int kdInit(KD *pkd,int nBucket,float *fPeriod,float *fCenter,int bOutDiag)
 	}
 
 
-void kdSetUniverse(KD kd,float G,float Omega0,float Lambda, float H0,float z)
+void kdSetUniverse(KD kd,float G,float Omega0,float Lambda, float fQuintess,
+			float H0,float z)
 {
 	kd->G = G;
 	csmInitialize(&kd->csm);
 	kd->csm->dOmega0 = Omega0;
 	kd->csm->dLambda = Lambda;
+	kd->csm->dQuintess = fQuintess;
 	kd->csm->dHubble0 = H0;
 	/*
 	 * XXX bComove is never used below, nor is there a command line

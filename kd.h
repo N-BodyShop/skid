@@ -338,7 +338,7 @@ typedef struct kdContext {
 void kdTime(KD,int *,int *);
 int kdInit(KD *,int,float *,float *,int);
 void kdSetSoft(KD,float);
-void kdSetUniverse(KD,float,float,float,float,float);
+void kdSetUniverse(KD,float,float,float,float,float,float);
 int kdParticleType(KD,int);
 int kdReadTipsy(KD,FILE *,int);
 int kdBuildTree(KD);

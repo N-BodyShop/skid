@@ -7,6 +7,8 @@ typedef struct csmContext {
     double dOmega0;
     double dLambda;
     double dOmegaRad;
+    double dQuintess; /* w = -1/2 equation of  state */
+    double dOmegab;
     } * CSM;
 
 void csmInitialize(CSM *pcsm);
@@ -18,6 +20,9 @@ double csmComoveDriftInt(CSM csm, double dIExp);
 double csmComoveKickInt(CSM csm, double dIExp);
 double csmComoveDriftFac(CSM csm,double dTime,double dDelta);
 double csmComoveKickFac(CSM csm,double dTime,double dDelta);
-
+double csmComoveLookbackTime2Exp(CSM csm,double dComoveTime);
+double csmGrowthFac(CSM csm, double dExp);
+double csmGrowthFacDot(CSM csm, double dExp);
+double csmExp2Om(CSM csm, double dExp);
      
 #endif

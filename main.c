@@ -4,6 +4,7 @@
 #include <limits.h>
 #include <string.h>
 #include <assert.h>
+#include <fenv.h>
 #include "kd.h"
 #include "smooth1.h"
 
@@ -21,7 +22,7 @@ void usage(void)
 	fprintf(stderr,"COSMOLOGY and UNITS arguments:\n");
 	fprintf(stderr,"     [-z <fRedShift>] [-O <fOmega>]\n");
 	fprintf(stderr,"     [-G <fGravConst>] [-H <fHubble>]\n");
-	fprintf(stderr,"     [-Lambda <fLambda>]\n");
+	fprintf(stderr,"     [-Lambda <fLambda>] [-Q <fQuintessense]\n");
 	fprintf(stderr,"GROUP FINDING arguments (see man page!):\n");
 	fprintf(stderr,"     [-s <nSmooth>] [-d <fMinDensity>] [-t <fMaxTemp>]\n");
 	fprintf(stderr,"     [-cvg <fConvergeRadius>] [-scoop <fScoopRadius>]\n");
@@ -52,6 +53,7 @@ int main(int argc,char **argv)
 	int bStandard;
 	float fTau,z,Omega0,G,H0,fDensMin,fTempMax,fMassMax,fCvg,fScoop,fEps;
 	float Lambda;		/* Cosmological constant */
+	float fQuintess;	/* Omega_quintessence */
 	float fPeriod[3],fCenter[3];
 	char achGroup[256],achName[256];
 	/*
@@ -68,6 +70,8 @@ int main(int argc,char **argv)
 	int iExt;
 	int nScat;
 	int bOutDiag;
+
+	feenableexcept(FE_OVERFLOW | FE_DIVBYZERO | FE_INVALID);
 
 	printf("SKID v1.4.1: Joachim Stadel, Dec. 2000\n");
 	/*
@@ -88,6 +92,7 @@ int main(int argc,char **argv)
 	z = 0.0;
 	Omega0 = 1.0;
 	Lambda = 0.0;
+	fQuintess = 0.0;
 	G = 1.0;
 	H0 = 0.0;
 	/*
@@ -154,6 +159,12 @@ int main(int argc,char **argv)
 			++i;
 			if (i >= argc) usage();
 			Lambda = atof(argv[i]);
+			++i;
+			}
+		else if (!strcmp(argv[i],"-Q")) {
+			++i;
+			if (i >= argc) usage();
+			fQuintess = atof(argv[i]);
 			++i;
 			}
 		else if (!strcmp(argv[i],"-G")) {
@@ -436,7 +447,7 @@ int main(int argc,char **argv)
 	 ** Set the cosmological parameters.  These are also needed in
 	 ** kdOutStats().
 	 */
-	kdSetUniverse(kd,G,Omega0,Lambda,H0,z);
+	kdSetUniverse(kd,G,Omega0,Lambda,fQuintess,H0,z);
 	/*
 	 ** Set the softening of all particles, if a softening was 
 	 ** specified.
