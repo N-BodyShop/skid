@@ -407,11 +407,12 @@ void main(int argc,char **argv)
 	kdInitpGroup(kd);
 	kdCalcCenter(kd);
  UnbindOnly:
+	/*
+	 ** Set the cosmological parameters.  These are also needed in
+	 ** kdOutStats().
+	 */
+	kdSetUniverse(kd,G,Omega0,H0,z);
 	if (!bNoUnbind) {
-		/*
-		 ** Set the cosmological parameters.
-		 */
-		kdSetUniverse(kd,G,Omega0,H0,z);
 		/*
 		 ** Set the softening of all particles, if a softening was 
 		 ** specified.
