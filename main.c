@@ -91,8 +91,8 @@ void main(int argc,char **argv)
 	 */
 	nSmooth = 64;
 	fDensMin = 0.0;
-	fTempMax = HUGE;
-	fMassMax = HUGE;
+	fTempMax = FLT_MAX;
+	fMassMax = FLT_MAX;
 	bCvg = 0;
 	bScoop = 0;
 	nMembers = 8;
@@ -110,7 +110,7 @@ void main(int argc,char **argv)
 	 ** Default periodic box parameters.
 	 */
 	for (j=0;j<3;++j) {
-		fPeriod[j] = HUGE;
+		fPeriod[j] = FLT_MAX;
 		fCenter[j] = 0.0;
 		}
 	/*
