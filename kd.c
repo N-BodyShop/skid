@@ -551,7 +551,7 @@ int kdBuildMoveTree(KD kd)
 
 
 int CutCriterion(KD kd,int pi,float fDensMin,float fTempMax,
-				 float fMassMax,int bGasAndDark)
+				 float fMassMax,int bGasAndDark,int bGasOnly)
 {
 	if (kd->pInit[pi].fMass > fMassMax) return(0);
 	switch (kd->inType) {
@@ -587,7 +587,7 @@ int CutCriterion(KD kd,int pi,float fDensMin,float fTempMax,
 			if (kd->pInit[pi].fDensity >= fDensMin && 
 				kd->pInit[pi].fTemp <= fTempMax) return(1);
 			}
-		else if (kdParticleType(kd,kd->pInit[pi].iOrder) == STAR) {
+		else if (kdParticleType(kd,kd->pInit[pi].iOrder) == STAR && !bGasOnly) {
 			return(1);
 			}
 		}
@@ -595,7 +595,7 @@ int CutCriterion(KD kd,int pi,float fDensMin,float fTempMax,
 	}
 
 
-int ScatterCriterion(KD kd,int pi,int bGasAndDark)
+int ScatterCriterion(KD kd,int pi,int bGasAndDark,int bGasOnly)
 {
 	switch (kd->inType) {
 	case (DARK):
@@ -617,7 +617,7 @@ int ScatterCriterion(KD kd,int pi,int bGasAndDark)
 		if (kdParticleType(kd,kd->pInit[pi].iOrder) == GAS) {
 			return(1);
 			}
-		else if (kdParticleType(kd,kd->pInit[pi].iOrder) == STAR) {
+		else if (kdParticleType(kd,kd->pInit[pi].iOrder) == STAR && !bGasOnly) {
 			return(1);
 			}
 		}
@@ -626,7 +626,7 @@ int ScatterCriterion(KD kd,int pi,int bGasAndDark)
 
 
 int kdInitMove(KD kd,float fDensMin,float fTempMax,float fMassMax,
-				float fCvg,int bGasAndDark)
+				float fCvg,int bGasAndDark,int bGasOnly)
 {
 	int pi,nCnt,j;
 	float fCvg2;
@@ -639,7 +639,7 @@ int kdInitMove(KD kd,float fDensMin,float fTempMax,float fMassMax,
 	kd->nMove = 0;
 	for (pi=0;pi<kd->nParticles;++pi) {
 		kd->nMove += CutCriterion(kd,pi,fDensMin,fTempMax,
-								  fMassMax,bGasAndDark);
+					        fMassMax,bGasAndDark,bGasOnly);
 		}
 	kd->nActive = kd->nMove;
 	/*
@@ -649,7 +649,7 @@ int kdInitMove(KD kd,float fDensMin,float fTempMax,float fMassMax,
 	assert(kd->pMove != NULL);
 	nCnt = 0;
 	for (pi=0;pi<kd->nParticles;++pi) {
-		if (CutCriterion(kd,pi,fDensMin,fTempMax,fMassMax,bGasAndDark)) {
+		if (CutCriterion(kd,pi,fDensMin,fTempMax,fMassMax,bGasAndDark,bGasOnly)) {
 			for (j=0;j<3;++j) {
 				kd->pMove[nCnt].r[j] = kd->pInit[pi].r[j];
 				kd->pMove[nCnt].rOld[j] = kd->pInit[pi].r[j];
@@ -672,7 +672,7 @@ int kdInitMove(KD kd,float fDensMin,float fTempMax,float fMassMax,
 	}
 
 
-int kdScatterActive(KD kd,int bGasAndDark)
+int kdScatterActive(KD kd,int bGasAndDark,int bGasOnly)
 {
 	PINIT *p,t;
 	int i,j;
@@ -683,9 +683,9 @@ int kdScatterActive(KD kd,int bGasAndDark)
 	i = 0;
 	j = kd->nParticles-1;
 	while (1) {
-		while (ScatterCriterion(kd,i,bGasAndDark))
+		while (ScatterCriterion(kd,i,bGasAndDark,bGasOnly))
 			if (++i > j) goto done;
-		while (!ScatterCriterion(kd,j,bGasAndDark))
+		while (!ScatterCriterion(kd,j,bGasAndDark,bGasOnly))
 			if (i > --j) goto done;
 		t = p[i];
 		p[i] = p[j];

@@ -26,7 +26,7 @@ void usage(void)
 	fprintf(stderr,"     [-s <nSmooth>] [-d <fMinDensity>] [-t <fMaxTemp>]\n");
 	fprintf(stderr,"     [-cvg <fConvergeRadius>] [-scoop <fScoopRadius>]\n");
 	fprintf(stderr,"     [-m <nMinMembers>] [-nu] [-gd] [-unbind <GroupName>[.grp]]\n");
-	fprintf(stderr,"     [-M <fMaxMass>] [-fic]\n");
+	fprintf(stderr,"     [-M <fMaxMass>] [-fic] [-go]\n");
 	fprintf(stderr,"GRAVITATIONAL SOFTENING arguments:\n");
 	fprintf(stderr,"     [-spline] [-plummer] [-e <fSoft>]\n"); 
 	fprintf(stderr,"PERIODIC BOX specification:\n");
@@ -47,7 +47,7 @@ int main(int argc,char **argv)
 	 ** Input argument variables and control.
 	 */
 	int bTau,bCvg,bScoop,nSmooth,nMembers,bNoUnbind,bUnbindOnly,iSoftType;
-	int bEps,bOutRay,bOutDens,bGasAndDark,bOutStats,bForceInitialCut;
+	int bEps,bOutRay,bOutDens,bGasAndDark,bGasOnly,bOutStats,bForceInitialCut;
 	int bPeriodic;
 	int bStandard;
 	float fTau,z,Omega0,G,H0,fDensMin,fTempMax,fMassMax,fCvg,fScoop,fEps;
@@ -95,13 +95,14 @@ int main(int argc,char **argv)
 	 */
 	nSmooth = 64;
 	fDensMin = 0.0;
-	fTempMax = FLT_MAX;
-	fMassMax = FLT_MAX;
+	fTempMax = HUGE;
+	fMassMax = HUGE;
 	bCvg = 0;
 	bScoop = 0;
 	nMembers = 8;
 	bNoUnbind = 0;
 	bGasAndDark = 0;
+	bGasOnly = 0;
 	bUnbindOnly = 0;
 	bForceInitialCut = 0;
 	bPeriodic = 0;
@@ -114,7 +115,7 @@ int main(int argc,char **argv)
 	 ** Default periodic box parameters.
 	 */
 	for (j=0;j<3;++j) {
-		fPeriod[j] = FLT_MAX;
+		fPeriod[j] = HUGE;
 		fCenter[j] = 0.0;
 		}
 	/*
@@ -221,6 +222,10 @@ int main(int argc,char **argv)
 			}
 		else if (!strcmp(argv[i],"-gd")) {
 			bGasAndDark = 1;
+			++i;
+			}
+		else if (!strcmp(argv[i],"-go")) {
+			bGasOnly = 1;
 			++i;
 			}
 		else if (!strcmp(argv[i],"-unbind")) {
@@ -346,7 +351,7 @@ int main(int argc,char **argv)
 		kdReadCenter(kd,achFile, bStandard);
 		goto UnbindOnly;
 		}
-	kdScatterActive(kd,bGasAndDark);
+	kdScatterActive(kd,bGasAndDark,bGasOnly);
 	kdBuildTree(kd);
 	smInit(&smx,kd,nSmooth);
 	kdTime(kd,&sec1,&usec1);
@@ -366,7 +371,7 @@ int main(int argc,char **argv)
 	 ** number of scatterers if possible.
 	 */
 	kdTime(kd,&sec2,&usec2);
-	nActive = kdInitMove(kd,fDensMin,fTempMax,fMassMax,fCvg,bGasAndDark);
+	nActive = kdInitMove(kd,fDensMin,fTempMax,fMassMax,fCvg,bGasAndDark,bGasOnly);
 	kdBuildMoveTree(kd);
 	if (bAllowInitialCut(kd) || bForceInitialCut) { 
 		nScat = smAccDensity(smx,1);

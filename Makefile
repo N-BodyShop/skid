@@ -4,7 +4,11 @@
 # on an SGI R4400 add -mips2 to CFLAGS
 # on an SGI R8000 (TFP) add -mips4 -O3 to CFLAGS
 #
-CFLAGS	=	-O2
+CC=cc
+#CFLAGS	=	-O2
+#Following added for gcc
+#CFLAGS = -O3 -funroll-loops
+CFLAGS = -O3 -mips4 -64 -r10000
 LIBS	=   -lm
 
 default:	skid totipnat
