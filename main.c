@@ -62,7 +62,6 @@ void main(int argc,char **argv)
 	int sec5,usec5;
 	char achFile[256];
 	
-	fpex_();
 	printf("SKID v1.2: Joachim Stadel, Jan. 1995\n");
 	/*
 	 ** Bucket size set to 16, user cannot affect this!
