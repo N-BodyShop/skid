@@ -287,12 +287,6 @@ void main(int argc,char **argv)
 	kdReadTipsy(kd,stdin);
 	if (bUnbindOnly) {
 		kdInGroup(kd,achGroup);
-		/*
-		 ** Prepare for unbinding, but for consistency sake don't
-		 ** perform a prior kdTooSmall as this would already have
-		 ** been done by skid in the no-unbind option. 
-		 */
-		kdGroupOrder(kd);
 		goto UnbindOnly;
 		}
 	kdScatterActive(kd);
@@ -366,9 +360,9 @@ void main(int argc,char **argv)
 	/*
 	 ** Prepare for unbinding.
 	 */
+ UnbindOnly:
 	kdGroupOrder(kd);
 	kdTooSmall(kd,nMembers);
- UnbindOnly:
 	if (!bNoUnbind) {
 		/*
 		 ** Set the cosmological parameters.
