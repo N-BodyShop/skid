@@ -306,7 +306,19 @@ void main(int argc,char **argv)
 	kdInit(&kd,nBucket,fPeriod,fCenter);
 	kdReadTipsy(kd,stdin);
 	if (bUnbindOnly) {
+		int pi;
+
 		kdInGroup(kd,achGroup);
+		kd->nMove = kd->nParticles;
+		kd->pMove = (PMOVE *)malloc(kd->nMove*sizeof(PMOVE));
+		for (pi=0;pi<kd->nParticles;++pi) {
+		    for (j=0;j<3;++j) {
+			kd->pMove[pi].r[j] = kd->pInit[pi].r[j];
+			kd->pMove[pi].rOld[j] = kd->pInit[pi].r[j];
+			}
+		    kd->pMove[pi].iOrder = kd->pInit[pi].iOrder;
+		    }
+		assert(kd->pMove != NULL);
 		goto UnbindOnly;
 		}
 	kdScatterActive(kd, bMoveAll);
