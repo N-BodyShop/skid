@@ -437,23 +437,18 @@ int main(int argc,char **argv)
 	 ** kdOutStats().
 	 */
 	kdSetUniverse(kd,G,Omega0,Lambda,H0,z);
-	if (!bNoUnbind) {
-		/*
-		 ** Set the softening of all particles, if a softening was 
-		 ** specified.
-		 */
-		if (bEps) kdSetSoft(kd,fEps);
-		/*
-		 ** Do the unbinding of particles.
-		 */
-		kdTime(kd,&sec4,&usec4);
-		kdUnbind(kd,iSoftType,fScoop,bGasAndDark);
-		kdTime(kd,&sec4,&usec4);
-		kdTooSmall(kd,nMembers);
-		}
-	else {
-		kdTooSmall(kd,nMembers);
-		}
+	/*
+	 ** Set the softening of all particles, if a softening was 
+	 ** specified.
+	 */
+	if (bEps) kdSetSoft(kd,fEps);
+	/*
+	 ** Do the unbinding of particles.
+	 */
+	kdTime(kd,&sec4,&usec4);
+	kdUnbind(kd,iSoftType,fScoop,bGasAndDark,bNoUnbind);
+	kdTime(kd,&sec4,&usec4);
+	kdTooSmall(kd,nMembers);
 	/*
 	 ** Output group files.
 	 */

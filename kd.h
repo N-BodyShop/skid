@@ -356,7 +356,7 @@ void kdCalcCenter(KD);
 void kdReadCenter(KD,char *,int);
 void kdGroupOrder(KD);
 void kdTooSmall(KD,int);
-void kdUnbind(KD,int,float,int);
+void kdUnbind(KD,int,float,int,int);
 void kdOutGroup(KD,char *);
 void kdOutDensity(KD,char *);
 void kdOutVector(KD,char *);

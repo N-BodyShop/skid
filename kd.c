@@ -1302,7 +1302,7 @@ void kdTooSmall(KD kd,int nMembers)
 /*
  ** This function maintains STRICT group order!
  */
-void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark)
+void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark,int bNoUnbind)
 {
 	PINIT *q,t;
 	int iGroup,n,i,j,iBig,iMin,pi;
@@ -1409,7 +1409,7 @@ void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark)
 					iMin = i;
 					}
 				}
-			if (fTotBig < 0) break;
+			if (fTotBig < 0 || bNoUnbind) break;
 			/*
 			 ** Unbind particle iBig!
 			 */
