@@ -1,6 +1,8 @@
 #ifndef KD_HINCLUDED
 #define KD_HINCLUDED
 
+#include "cosmo.h"
+
 #define ROOT		1
 #define LOWER(i)	(i<<1)
 #define UPPER(i)	((i<<1)+1)
@@ -70,8 +72,7 @@ typedef struct kdContext {
 	float fPeriod[3];
 	float fCenter[3];
 	float G;
-	float Omega0;
-	float H0;
+	CSM csm;
 	float z;
 	int nParticles;
 	int nDark;
@@ -336,7 +337,7 @@ typedef struct kdContext {
 void kdTime(KD,int *,int *);
 int kdInit(KD *,int,float *,float *,int);
 void kdSetSoft(KD,float);
-void kdSetUniverse(KD,float,float,float,float);
+void kdSetUniverse(KD,float,float,float,float,float);
 int kdParticleType(KD,int);
 int kdReadTipsy(KD,FILE *,int);
 int kdBuildTree(KD);

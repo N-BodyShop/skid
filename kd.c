@@ -57,8 +57,7 @@ int kdInit(KD *pkd,int nBucket,float *fPeriod,float *fCenter,int bOutDiag)
 		}
 	kd->bOutDiag = bOutDiag;
 	kd->G = 1.0;
-	kd->Omega0 = 1.0;
-	kd->H0 = 0.0;
+	kd->csm = NULL;
 	kd->z = 0.0;
 	kd->nParticles = 0;
 	kd->nDark = 0;
@@ -83,11 +82,18 @@ int kdInit(KD *pkd,int nBucket,float *fPeriod,float *fCenter,int bOutDiag)
 	}
 
 
-void kdSetUniverse(KD kd,float G,float Omega0,float H0,float z)
+void kdSetUniverse(KD kd,float G,float Omega0,float Lambda, float H0,float z)
 {
 	kd->G = G;
-	kd->Omega0 = Omega0;
-	kd->H0 = H0;
+	csmInitialize(&kd->csm);
+	kd->csm->dOmega0 = Omega0;
+	kd->csm->dLambda = Lambda;
+	kd->csm->dHubble0 = H0;
+	/*
+	 * XXX bComove is never used below, nor is there a command line
+	 * flag to set it.  Caveat Utor.
+	 */
+	if(H0 != 0.0) kd->csm->bComove = 1;
 	kd->z = z;
 	}
 
@@ -1300,7 +1306,10 @@ void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark)
 {
 	PINIT *q,t;
 	int iGroup,n,i,j,iBig,pi;
-	float hx,hy,hz,dx,dy,dz,dv,dv2,fShift,fCosmo,fTot,fTotBig;
+	float hx,hy,hz,dx,dy,dz,dv,dv2,
+	    fShift,		/* Expansion factor */
+	    fCosmo,		/* Current adot = a*Hubble */
+	    fTot,fTotBig;
 	double dMass,rcm[3],vcm[3],*pdPot,dPot;
 	int nUnbind = 0;
 
@@ -1311,7 +1320,7 @@ void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark)
 	hy = 0.5*kd->fPeriod[1];
 	hz = 0.5*kd->fPeriod[2];
 	fShift = 1.0/(1.0+kd->z);
-	fCosmo = kd->H0*sqrt(1.0+kd->Omega0*kd->z);
+	fCosmo = fShift*csmExp2Hub(kd->csm, fShift);
 	/*
 	 ** Now build a tree for the non-grouped particles!
 	 ** They are the first "group" in the pInit array after the group order.
@@ -1696,13 +1705,13 @@ void kdOutStats(KD kd,char *pszFile, float fDensMin, float fTempMax)
 	float fRhmass;
 	float fVdisp;
 	float fExp;
-	float fExpHub;
+	float fExpHub;		/* current adot = a*Hubble */
 
 	if (kd->bOutDiag) puts(">> kdOutStats()");
 	fflush(stdout);
 
 	fExp = 1.0/(1.0+kd->z);
-	fExpHub = kd->H0*sqrt(1.0+kd->Omega0*kd->z);
+	fExpHub = fExp*csmExp2Hub(kd->csm, fExp);
 
 	fp = fopen(pszFile,"w");
 	assert(fp != NULL);

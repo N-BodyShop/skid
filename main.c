@@ -21,6 +21,7 @@ void usage(void)
 	fprintf(stderr,"COSMOLOGY and UNITS arguments:\n");
 	fprintf(stderr,"     [-z <fRedShift>] [-O <fOmega>]\n");
 	fprintf(stderr,"     [-G <fGravConst>] [-H <fHubble>]\n");
+	fprintf(stderr,"     [-Lambda <fLambda>]\n");
 	fprintf(stderr,"GROUP FINDING arguments (see man page!):\n");
 	fprintf(stderr,"     [-s <nSmooth>] [-d <fMinDensity>] [-t <fMaxTemp>]\n");
 	fprintf(stderr,"     [-cvg <fConvergeRadius>] [-scoop <fScoopRadius>]\n");
@@ -38,7 +39,7 @@ void usage(void)
 	exit(1);
 	}
 
-void main(int argc,char **argv)
+int main(int argc,char **argv)
 {
 	KD kd;
 	SMX smx;
@@ -50,6 +51,7 @@ void main(int argc,char **argv)
 	int bPeriodic;
 	int bStandard;
 	float fTau,z,Omega0,G,H0,fDensMin,fTempMax,fMassMax,fCvg,fScoop,fEps;
+	float Lambda;		/* Cosmological constant */
 	float fPeriod[3],fCenter[3];
 	char achGroup[256],achName[256];
 	/*
@@ -67,7 +69,7 @@ void main(int argc,char **argv)
 	int nScat;
 	int bOutDiag;
 
-	printf("SKID v1.3: Joachim Stadel, Jan. 1996\n");
+	printf("SKID v1.4: Joachim Stadel, Aug. 1999\n");
 	/*
 	 ** Bucket size set to 16, user cannot affect this!
 	 */
@@ -85,6 +87,7 @@ void main(int argc,char **argv)
 	 */
 	z = 0.0;
 	Omega0 = 1.0;
+	Lambda = 0.0;
 	G = 1.0;
 	H0 = 0.0;
 	/*
@@ -144,6 +147,12 @@ void main(int argc,char **argv)
 			++i;
 			if (i >= argc) usage();
 			Omega0 = atof(argv[i]);
+			++i;
+			}
+		else if (!strcmp(argv[i],"-Lambda")) {
+			++i;
+			if (i >= argc) usage();
+			Lambda = atof(argv[i]);
 			++i;
 			}
 		else if (!strcmp(argv[i],"-G")) {
@@ -422,7 +431,7 @@ void main(int argc,char **argv)
 	 ** Set the cosmological parameters.  These are also needed in
 	 ** kdOutStats().
 	 */
-	kdSetUniverse(kd,G,Omega0,H0,z);
+	kdSetUniverse(kd,G,Omega0,Lambda,H0,z);
 	if (!bNoUnbind) {
 		/*
 		 ** Set the softening of all particles, if a softening was 
@@ -464,6 +473,7 @@ void main(int argc,char **argv)
 	if (!bNoUnbind) printf("   Unbinding:          %d.%06d\n",sec4,usec4);
 	fflush(stdout);
 	kdFinish(kd);
+	return 0;
 	}
 	
 
