@@ -1,7 +1,7 @@
 
 
 
-SKID(1.2)                     SKID                      SKID(1.2)
+SKID(1.3)                     SKID                      SKID(1.3)
 
 
 
@@ -18,7 +18,8 @@ SYNOPSIS
      GROUP FINDING arguments (see man page!):
           [-s <nSmooth>] [-d <fMinDensity>] [-t <fMaxTemp>]
           [-cvg <fConvergeRadius>] [-scoop <fScoopRadius>]
-          [-m <nMinMembers>] [-nu] [-unbind <GroupFile>]
+          [-m <nMinMembers>] [-nu] [-gd]
+          [-M <fMaxMass>] [-unbind <GroupName>[.grp]]
      GRAVITATIONAL SOFTENING arguments:
           [-spline] [-plummer] [-e <fSoft>]
      PERIODIC BOX specification:
@@ -27,7 +28,7 @@ SYNOPSIS
           [-c <xyzCenter>]
           [-cx <xCenter>] [-cy <yCenter>] [-cz <zCenter>]
      OUTPUT arguments:
-          [-o <Output Name>] [-ray] [-den]
+          [-o <Output Name>] [-ray] [-den] [-stats]
 
 
 OPTIONS
@@ -38,7 +39,7 @@ OPTIONS
      length  which  the  friends-of-friends  stage  uses  to link
      together  the  converged  particles.  It  also  defines  the
      default  values for the -cfg and -scoop arguments.  For more
-     information of this parameter's signifigance see the discus-
+     information of this parameter's significance see the discus-
      sion below.
 
      [-z <fRedShift>]: Default fRedShift = 0.0
@@ -56,21 +57,21 @@ OPTIONS
      simulation.  Most  N-body  simulations  have their units set
      such that this constant is 1.0.
 
+
+
+
+Stadel Release 1.3  Last change: Feb 8, 1996                    1
+
+
+
+
+
+
+SKID(1.3)                     SKID                      SKID(1.3)
+
+
+
      [-H <fHubble>]: Default fHubble = 0.0
-
-
-
-Stadel Release 1.2  Last change: Jan 18, 1995                   1
-
-
-
-
-
-
-SKID(1.2)                     SKID                      SKID(1.2)
-
-
-
      Sets the Hubble constant for the simulation. If the  simula-
      tion was not performed in comoving coordinates then this can
      be left at zero. Note that this must be set in the units  of
@@ -107,7 +108,7 @@ SKID(1.2)                     SKID                      SKID(1.2)
      [-m <nMinMembers>]: Default nMinMembers = 8
      This argument allows the user to specify  what  the  minimum
      number  of  members  (particles)  per  group  should be. All
-     groups with less than this value will be dicarded.
+     groups with less than this value will be discarded.
 
      [-nu]: Disables Unbinding (No Unbinding).
      When this flag is specified, SKID will bypass the  unbinding
@@ -118,28 +119,52 @@ SKID(1.2)                     SKID                      SKID(1.2)
      the  skid.grp  file  or  use the -unbind argument at a later
      time.
 
-     [-unbind <GroupFile>]:
-     When a group file is specified  here,  SKID  will  take  the
+     [-gd]:
+     When this flag is specified, SKID will consider both the gas
+     particles  and  dark  matter  particles  when grouping. This
+     option has been found to be useful in some  situations,  but
+
+
+
+Stadel Release 1.3  Last change: Feb 8, 1996                    2
+
+
+
+
+
+
+SKID(1.3)                     SKID                      SKID(1.3)
+
+
+
+     usually  the  default  grouping  rules  are  physically more
+     relevant.
+
+     [-unbind <GroupName>[.grp]]:
+     When a group file name is specified here, SKID will take the
      group  assignments  in this file and proceed directly to the
-     unbinding stage. This argument is useful when one  wants  to
-     experiment  with different unbinding parameters for the same
+     unbinding stage. As of version 1.3, just  the  name  of  the
+     particular  run without the the .gtp files for unbinding. If
+     the .gtp file is not present then SKID will use  the  center
+     of  mass of each group as the group center. If the .gtp file
+     is present the the group centers will be read in and will be
+     the density centers that a prior no-unbind run had produced.
+     This argument is useful when one wants  to  experiment  with
+     different  unbinding  parameters  for the same group assign-
+     ments.  Also if the unbind part of SKID  is  desired  for  a
+     different     grouping     algorithm     such    as    plain
+     friends-of-friends (in this case there is no  .gtp  file  so
+     just specify something like fof.grp here).
 
-
-
-Stadel Release 1.2  Last change: Jan 18, 1995                   2
-
-
-
-
-
-
-SKID(1.2)                     SKID                      SKID(1.2)
-
-
-
-     group assignments.  Also if  the  unbind  part  of  SKID  is
-     desired  for  a  different  grouping algorithm such as plain
-     friends-of-friends.
+     [-M <fMaxMass>]:
+     Specifies a maximum mass of particle which is to be grouped.
+     This option is very useful if you have different mass parti-
+     cles and where the low mass particles are  used  in  a  high
+     resolution  region  of  the  simulation and where the higher
+     mass particles are used in a lower resolution  part  of  the
+     simulation.   Here  one  typically  wants  to  only generate
+     groups within the high resolution region, hence specifies  a
+     maximum mass for the the grouping particles.
 
      [-spline]: This is the default.
      Use a cubic spline softened gravitational  interaction  when
@@ -164,6 +189,20 @@ SKID(1.2)                     SKID                      SKID(1.2)
 
      [-p <xyzPeriod>]:
      Default non-periodic in x,y and z dimensions
+
+
+
+Stadel Release 1.3  Last change: Feb 8, 1996                    3
+
+
+
+
+
+
+SKID(1.3)                     SKID                      SKID(1.3)
+
+
+
      Specifies that SKID take into  account  periodicity  in  all
      three dimension given by the period <xyzPeriod>. This can be
      used in place of the above as a shorthand.
@@ -181,7 +220,7 @@ SKID(1.2)                     SKID                      SKID(1.2)
 
      [-cx <xCenter>]: Default box center is 0.0 in x dimension
      Specifies the center of the periodic  box  when  SKID  takes
-     into  account periodicity in the x-dimension. This arguement
+     into  account  periodicity in the x-dimension. This argument
      can be ignored for a non-periodic simulation.
 
      [-cy <yCenter>] [-cz <zCenter>]: As above.
@@ -189,20 +228,6 @@ SKID(1.2)                     SKID                      SKID(1.2)
      [-o <Output Name>]: Default Output Name = "skid".
      This allows the user to specify an alternate  name  for  the
      output  files. For example, if the user specifies -o sim5 on
-
-
-
-Stadel Release 1.2  Last change: Jan 18, 1995                   3
-
-
-
-
-
-
-SKID(1.2)                     SKID                      SKID(1.2)
-
-
-
      the command line, then SKID  will  by  default  produce  the
      files sim5.grp and sim5.gtp (and if requested sim5.ray).
 
@@ -215,6 +240,39 @@ SKID(1.2)                     SKID                      SKID(1.2)
      This option outputs the densities  of  the  particles  which
      SKID  uses  for  its  initial density cut. Note: this is the
      same as the density output by SMOOTH for the same nSmooth.
+
+     [-stats]: Causes extra information on each group to be  out-
+     put to a .stat file.
+     Each line of this file corresponds to one group. The data on
+     each line is:
+     <Group> <Members> <TotMass> <GasMass> <StarMass>  <MaxVcirc>
+     <HalfVcirc>   <OuterVcirc>   <OuterR>   <xCenter>  <yCenter>
+     <zCenter> <xVcm> <yVcm> <zVcm> *EOL*
+     Where <Group> is the Group number, <Members> is  the  number
+     of  members  the group contains. <TotMass> is the total mass
+     of the group, <GasMass> and <StarMass> is the mass contained
+     in  gas  and  stars  respectively. <MaxVcirc> is the maximum
+     circular velocity of the group, <HalfVcirc> is the  circular
+     velocity   of   the  group  at  its  half  mass  radius  and
+     <OuterVcirc> is the circular velocity at the maximum  radius
+
+
+
+Stadel Release 1.3  Last change: Feb 8, 1996                    4
+
+
+
+
+
+
+SKID(1.3)                     SKID                      SKID(1.3)
+
+
+
+     of  the  group  given  in <OuterR>. <xCenter>, <yCenter> and
+     <zCenter> is the x,y, and z coordinate of the center of  the
+     group.  <xVcm>, <yVcm> and <zVcm> is the x,y and z component
+     to the center of mass velocity of the group.
 
 
 DESCRIPTION
@@ -255,20 +313,6 @@ DESCRIPTION
      Stars and dark matter: Same as stars and gas case.
 
      Stars and gas and dark matter: density and density gradients
-
-
-
-Stadel Release 1.2  Last change: Jan 18, 1995                   4
-
-
-
-
-
-
-SKID(1.2)                     SKID                      SKID(1.2)
-
-
-
      are  calculated  from all the star particles and all the gas
      particles.  The moving particles are then the gas  particles
      meeting  the  density  and  temperature criteria and all the
@@ -277,13 +321,27 @@ SKID(1.2)                     SKID                      SKID(1.2)
      Once the moving particles have  been  found  they  are  then
      moved  along the initial density gradients toward regions of
      higher density.  The particles are  successively  stepped  a
+
+
+
+Stadel Release 1.3  Last change: Feb 8, 1996                    5
+
+
+
+
+
+
+SKID(1.3)                     SKID                      SKID(1.3)
+
+
+
      distance  of  fConvergeRadius/2.0  in this manner until they
      stay within a distance  of  fConvergeRadius  over  5  steps.
      This means that they are oscillating in a local high density
      region.  We then group all the particles in each  high  den-
      sity  region  together  using  the friends-of-friends method
      with a linking length of fLinkLength.  Note that  this  also
-     links  together  high density regions seperated by less than
+     links  together  high density regions separated by less than
      fLinkLength. Once all particles are localized in  this  way,
      we  proceed  to "squish" them together even more to find the
      high density center. Lastly we discard groups with less than
@@ -321,20 +379,6 @@ SKID(1.2)                     SKID                      SKID(1.2)
      energies (the center of mass changes) of the remaining  par-
      ticles and return to step 3.
 
-
-
-
-Stadel Release 1.2  Last change: Jan 18, 1995                   5
-
-
-
-
-
-
-SKID(1.2)                     SKID                      SKID(1.2)
-
-
-
      Case II unbinding:
 
      Here we include some  of  the  group's  environment  to  the
@@ -343,9 +387,23 @@ SKID(1.2)                     SKID                      SKID(1.2)
 
      1. Calculate the potential energies as per case I, step 1.
 
+
+
+
+Stadel Release 1.3  Last change: Feb 8, 1996                    6
+
+
+
+
+
+
+SKID(1.3)                     SKID                      SKID(1.3)
+
+
+
      1a. Include the potential contribution  of  all  non-grouped
      mass  within  a  2*fLinkLength  ball about the center of the
-     high density region of the group. In otherwords we  want  to
+     high density region of the group. In other words we want  to
      include some of the mass about the density maximum.
 
      2. Calculate the kinetic energies as per case I, step 2.
@@ -387,31 +445,31 @@ OUTPUT FILES
      each star_particle.tform field.) This file can also be  read
      in by tipsy or any tool accepting TIPSY BINARY format.
 
-
-
-
-Stadel Release 1.2  Last change: Jan 18, 1995                   6
-
-
-
-
-
-
-SKID(1.2)                     SKID                      SKID(1.2)
-
-
-
      skid.ray: This ASCII file is in TIPSY VECTOR format and con-
      tains  a  vector  pointing from the initial position of each
      particle to the localized (moved and squished)  position  of
      that  particle. For particles not moved the vector stored is
-     null. This file can be read in by tipsy and used to  analyse
+     null. This file can be read in by tipsy and used to  analyze
      the actions of skid.
 
-     skid.den: This ASCII file is in TIPSY ARRAY format and  con-
-     tains  the density of each particle considered for grouping.
-     Particles not considered for grouping have their density set
-     to 0.
+     skid.den: This ASCII file  is  in  TIPSY  ARRAY  format  and
+
+
+
+Stadel Release 1.3  Last change: Feb 8, 1996                    7
+
+
+
+
+
+
+SKID(1.3)                     SKID                      SKID(1.3)
+
+
+
+     contains  the density of each particle considered for group-
+     ing.  Particles not considered for grouping have their  den-
+     sity set to 0.
 
 
 EXAMPLES
@@ -453,20 +511,6 @@ WARNINGS
      it will  miss  the  smaller  scale  objects  and  may  group
      together  many  smaller  objects to form large associations.
      For example the desired groups could be galaxies  in  a  gas
-
-
-
-Stadel Release 1.2  Last change: Jan 18, 1995                   7
-
-
-
-
-
-
-SKID(1.2)                     SKID                      SKID(1.2)
-
-
-
      and  dark matter simulation, fLinkLength should reflect this
      fact.
 
@@ -475,6 +519,20 @@ SKID(1.2)                     SKID                      SKID(1.2)
      simulations an nSmooth of 32 is acceptable.
 
      3. The unbinding procedure is O(Ngroup^2), this  means  that
+
+
+
+Stadel Release 1.3  Last change: Feb 8, 1996                    8
+
+
+
+
+
+
+SKID(1.3)                     SKID                      SKID(1.3)
+
+
+
      for very large simulations and specifically situations where
      groups larger than a couple of thousand  members  are  found
      the  unbinding  procedure  could be prohibitive. So far this
@@ -522,7 +580,15 @@ SEE ALSO
 
 
 
-Stadel Release 1.2  Last change: Jan 18, 1995                   8
+
+
+
+
+
+
+
+
+Stadel Release 1.3  Last change: Feb 8, 1996                    9
 
 
 
