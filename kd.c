@@ -1112,7 +1112,7 @@ void kdTooSmall(KD kd,int nMembers)
 		++pnMembers[kd->piGroup[pi]];
 		}
 	for (i=1;i<kd->nGroup;++i) {
-		if (pnMembers[i] <= nMembers) {
+		if (pnMembers[i] < nMembers) {
 			pnMembers[i] = 0;
 			}
 		}

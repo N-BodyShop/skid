@@ -27,7 +27,7 @@ typedef struct pInitial {
 	float v[3];
 	float fMass;
 	float fSoft;
-	float fTemp;		/* Could get rid of this */
+	float fTemp;
 	float fBall2;
 	float fDensity;
 	int iOrder;
@@ -93,6 +93,26 @@ typedef struct kdContext {
 	int uSecond;
 	int uMicro;
 	} * KD;
+
+
+#define INTERSECTNP(pkdn,x,y,z,fDist2)\
+{\
+	float INTRSCT_dx,INTRSCT_dy,INTRSCT_dz;\
+	float INTRSCT_dx1,INTRSCT_dy1,INTRSCT_dz1;\
+	INTRSCT_dx = (pkdn)->bnd.fMin[0] - x;\
+	INTRSCT_dx1 = x - (pkdn)->bnd.fMax[0];\
+	INTRSCT_dy = (pkdn)->bnd.fMin[1] - y;\
+	INTRSCT_dy1 = y - (pkdn)->bnd.fMax[1];\
+	INTRSCT_dz = (pkdn)->bnd.fMin[2] - z;\
+	INTRSCT_dz1 = z - (pkdn)->bnd.fMax[2];\
+	if (INTRSCT_dx > 0.0) fDist2 = INTRSCT_dx*INTRSCT_dx;\
+	else if (INTRSCT_dx1 > 0.0) fDist2 = INTRSCT_dx1*INTRSCT_dx1;\
+	else fDist2 = 0.0;\
+	if (INTRSCT_dy > 0.0) fDist2 += INTRSCT_dy*INTRSCT_dy;\
+	else if (INTRSCT_dy1 > 0.0) fDist2 += INTRSCT_dy1*INTRSCT_dy1;\
+	if (INTRSCT_dz > 0.0) fDist2 += INTRSCT_dz*INTRSCT_dz;\
+	else if (INTRSCT_dz1 > 0.0) fDist2 += INTRSCT_dz1*INTRSCT_dz1;\
+	}
 
 
 #define INTERSECT(c,cp,fBall2,lx,ly,lz,x,y,z,sx,sy,sz)\
