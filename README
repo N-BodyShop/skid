@@ -1,0 +1,55 @@
+
+
+				SKID (Spline Kernel Interpolative Denmax)
+					
+							VERSION 1.2
+
+
+				A Group Finder for N-body Simulations
+
+				Stadel Release 1.2: October 27, 1994
+
+Changes from v1.1:
+	o 	Fixed bug in tree building, this bug only affected cases where
+		a very small "bucket" size was chosen and the number of particles
+		was not a power of two.
+
+Included are:
+	Makefile
+	main.c
+	kd.c
+	kd.h
+	grav.c
+	grav.h
+	smooth1.c
+	smooth1.h
+	tipsydefs.h
+	totipnat.c
+	dark.std
+	demo
+	man1/skid.1
+	cat1/skid.1
+
+For detailed information read the man page (either cat1/skid.1 or
+man1/skid.1). A small demo of a 32768 particle input file has 
+been included, just type demo after building skid. The demo input
+is in the XDR standard binary format and is converted to a NATIVE
+tipsy binary file by totipnat. The program totipnat is one of several
+file conversion and other tools in a package called tipsy_tools which
+is part of the TIPSY distribution.
+
+To build:
+
+	> make
+
+To run the demo:
+
+	> demo
+
+To get further information contact:
+
+	hpccsoft@astro.washington.edu
+
+
+
+
