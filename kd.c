@@ -571,6 +571,12 @@ int CutCriterion(KD kd,int pi,float fDensMin,float fTempMax,
 		break;
 	case (GAS|STAR):
 	case (DARK|GAS|STAR):
+		if (bGasAndDark) {
+			if (kdParticleType(kd,kd->pInit[pi].iOrder) == DARK) {
+				if (kd->pInit[pi].fDensity >= fDensMin)
+				    return(1);
+				}
+			}
 		if (kdParticleType(kd,kd->pInit[pi].iOrder) == GAS) {
 			if (kd->pInit[pi].fDensity >= fDensMin && 
 				kd->pInit[pi].fTemp <= fTempMax) return(1);
@@ -601,6 +607,7 @@ int ScatterCriterion(KD kd,int pi,int bGasAndDark)
 		break;
 	case (GAS|STAR):
 	case (DARK|GAS|STAR):
+		if (bGasAndDark) return(1);
 		if (kdParticleType(kd,kd->pInit[pi].iOrder) == GAS) {
 			return(1);
 			}
@@ -1355,8 +1362,9 @@ void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark)
 		pdPot = (double *)malloc(n*sizeof(double));
 		assert(pdPot != NULL);
 		kdCellPot(kd,q,n,iSoftType,pdPot);
-		if ((kd->inType == DARK|GAS && !bGasAndDark) || 
-			kd->inType == DARK|GAS|STAR || kd->inType == DARK|STAR) {
+		if ((kd->inType == DARK|GAS && !bGasAndDark)
+		    || (kd->inType == DARK|GAS|STAR && !bGasAndDark)
+		    || kd->inType == DARK|STAR) {
 			kdAddScoopPot(kd,q,n,kd->pGroup[iGroup].rCenter,fScoop,
 						  kd->pGroup[iGroup].rel,iSoftType,pdPot);
 			}
