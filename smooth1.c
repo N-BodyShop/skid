@@ -500,7 +500,7 @@ int smAccDensity(SMX smx,int bInitial)
 		else if (bInitial) {
 			/*
 			 ** On the initial iteration we want to remove all potential
-			 ** high denity scatterers which did not scatter. Note: we
+			 ** high density scatterers which did not scatter. Note: we
 			 ** should only do this in the dark matter only case.
 			 */
 			p[pi].fDensity = 0.0;
@@ -508,7 +508,9 @@ int smAccDensity(SMX smx,int bInitial)
 		}
 	smx->kd->nInitActive = ScatterCut(smx->kd->pInit,
 									  smx->kd->nInitActive,fScatDens);
-	smx->nExtraScat = ScatterCut(smx->pp,smx->nExtraScat,fScatDens);
+	if (smx->nExtraScat > 0) {
+		smx->nExtraScat = ScatterCut(smx->pp,smx->nExtraScat,fScatDens);
+		}
 	free(nnList);
 	if (smx->kd->bOutDiag) puts("<< smAccDensity()");
 	fflush(stdout);
