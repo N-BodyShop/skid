@@ -243,14 +243,18 @@ Causes extra information on each group to be output to a .stat file.
 Each line of this file corresponds to one group. The data on each line is:
 .br
 <Group> <Members> <TotMass> <GasMass> <StarMass> <MaxVcirc> <HalfVcirc> 
-<OuterVcirc> <OuterR> <xCenter> <yCenter> <zCenter> <xVcm> <yVcm> <zVcm> *EOL*
+<OuterVcirc> <MaxVcircR> <HalfMassR> <OuterR> <Vdisp> <xCenter> <yCenter>
+<zCenter> <xVcm> <yVcm> <zVcm> *EOL*
 .br
 Where <Group> is the Group number, <Members> is the number of members the
 group contains. <TotMass> is the total mass of the group, <GasMass> and <StarMass>
 is the mass contained in gas and stars respectively. <MaxVcirc> is the maximum
-circular velocity of the group, <HalfVcirc> is the circular velocity of the 
-group at its half mass radius and <OuterVcirc> is the circular velocity at the 
-maximum radius of the group given in <OuterR>. <xCenter>, <yCenter> and <zCenter>
+circular velocity of the group at radius <MaxVcircR>, <HalfVcirc> is
+the circular velocity of the
+group at its half mass radius, <HalfMassR>, <OuterVcirc> is the
+circular velocity at the
+maximum radius of the group given in <OuterR>, and <Vdisp> is the 1-D
+velocity dispersion. <xCenter>, <yCenter> and <zCenter>
 is the x,y, and z coordinate of the center of the group. <xVcm>, <yVcm> and 
 <zVcm> is the x,y and z component to the center of mass velocity of the group.
 
