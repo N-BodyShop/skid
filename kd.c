@@ -1043,7 +1043,8 @@ void kdReadCenter(KD kd,char *pszGtp)
 		 ** agrees with that which we set before in kdInGroup!
 		 */
 		if (h.nstar != kd->nGroup-1) {
-			fprintf(stderr,"ERROR: Could not open file:%s\n",pszGtp);
+			fprintf(stderr,"ERROR: grp and gtp files don't
+match: %d vs. %d.\n", h.nstar, kd->nGroup-1);
 			exit(1);
 			}
 		/*
