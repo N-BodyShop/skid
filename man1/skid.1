@@ -252,7 +252,7 @@ Each line of this file corresponds to one group. The data on each line is:
 .br
 <Group> <Members> <TotMass> <GasMass> <StarMass> <MaxVcirc> <HalfVcirc> 
 <OuterVcirc> <MaxVcircR> <HalfMassR> <OuterR> <Vdisp> <xCenter> <yCenter>
-<zCenter> <xVcm> <yVcm> <zVcm> *EOL*
+<zCenter> <xVcm> <yVcm> <zVcm> <xBound> <yBound> <zBound> *EOL*
 .br
 Where <Group> is the Group number, <Members> is the number of members the
 group contains. <TotMass> is the total mass of the group, <GasMass> and <StarMass>
@@ -265,6 +265,8 @@ maximum radius of the group given in <OuterR>, and <Vdisp> is the 1-D
 velocity dispersion. <xCenter>, <yCenter> and <zCenter>
 is the x,y, and z coordinate of the (density) center of the group. <xVcm>, <yVcm> and 
 <zVcm> is the x,y and z component to the center of mass velocity of the group.
+<xBound>, <yBound> and <zBound> contain the position of the most bound particle
+in the group.
 
 .SH DESCRIPTION
 

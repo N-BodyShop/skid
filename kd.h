@@ -45,6 +45,7 @@ typedef struct pMoved {
 typedef struct pGroup {
 	float rel[3];
 	float rCenter[3];
+	float rBound[3];
 	float vcm[3];
 	float fMass;
 	float fRadius;

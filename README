@@ -22,7 +22,7 @@ Changes from v1.2:
 		group center. If no .gtp file is present (as is the case when using 
 		FOF) unbinding will calculate the group center to be the center of
 		mass. This was somewhat of a disturbing problem in the past.
-	o	Now change log would be complete without this: enhanced performance.
+	o	No change log would be complete without this: enhanced performance.
 		Tree searching has been improved so that moving particles is more 
 		efficient. A "heuristic" algorithm is employed, by default, to remove
 		scatterers which makes a big difference in the speed of the code.

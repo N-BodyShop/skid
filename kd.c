@@ -1305,11 +1305,11 @@ void kdTooSmall(KD kd,int nMembers)
 void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark)
 {
 	PINIT *q,t;
-	int iGroup,n,i,j,iBig,pi;
+	int iGroup,n,i,j,iBig,iMin,pi;
 	float hx,hy,hz,dx,dy,dz,dv,dv2,
 	    fShift,		/* Expansion factor */
 	    fCosmo,		/* Current adot = a*Hubble */
-	    fTot,fTotBig;
+	    fTot,fTotBig,fTotMin;
 	double dMass,rcm[3],vcm[3],*pdPot,dPot;
 	int nUnbind = 0;
 
@@ -1391,6 +1391,7 @@ void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark)
 			 */
 			iBig = 0;
 			fTotBig = -1.0;
+			fTotMin = 1.0;
 			for (i=0;i<n;++i) {
 				dv2 = 0.0;
 				for (j=0;j<3;++j) {
@@ -1401,6 +1402,10 @@ void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark)
 				if (fTot > fTotBig) {
 					fTotBig = fTot;
 					iBig = i;
+					}
+				else if (fTot < fTotMin) {
+					fTotMin = fTot;
+					iMin = i;
 					}
 				}
 			if (fTotBig < 0) break;
@@ -1447,6 +1452,12 @@ void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark)
 		kd->pGroup[iGroup].fMass = dMass;
 		for (j=0;j<3;++j) {
 			kd->pGroup[iGroup].vcm[j] = vcm[j];
+			}
+		for (j=0;j<3;++j) {
+			dx = q[iMin].r[j] + kd->pGroup[iGroup].rel[j];
+			if (dx > hx) dx -= 2*hx;
+			if (dx <= -hx) dx += 2*hx;
+			kd->pGroup[iGroup].rBound[j] = dx;
 			}
 		}
 	printf("Number of particles Unbound:%d\n",nUnbind);
@@ -1805,9 +1816,9 @@ void kdOutStats(KD kd,char *pszFile, float fDensMin, float fTempMax)
  * 5: star mass, 6: maximum circular velocity, 7: 1/2 mass circular velocity
  * 8: outer circular velocity, 9: radius of max circular velocity,
  * 10: 1/2 mass radius, 11: outer radius, 12: 1-D velocity dispersion,
- * 13-15: center, 16-18: CM velocity.
+ * 13-15: center, 16-18: CM velocity, 19-21: pos. of most bound particle.
  */
-	    fprintf(fp, "%d %d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n",
+	    fprintf(fp, "%d %d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n",
 		    		iGroup,n,
 				fTotMass, fGasMass, fStarMass, sqrt(fVcirc),
 				sqrt(fmVcirc), sqrt(flVcirc),
@@ -1818,7 +1829,10 @@ void kdOutStats(KD kd,char *pszFile, float fDensMin, float fTempMax)
 				kd->pGroup[iGroup].rCenter[2], 
 				kd->pGroup[iGroup].vcm[0],
 				kd->pGroup[iGroup].vcm[1],
-				kd->pGroup[iGroup].vcm[2]);
+				kd->pGroup[iGroup].vcm[2],
+				kd->pGroup[iGroup].rBound[0],
+				kd->pGroup[iGroup].rBound[1],
+				kd->pGroup[iGroup].rBound[2]);
 		free(q);
 		}
 	fclose(fp);
