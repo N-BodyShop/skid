@@ -906,7 +906,7 @@ void kdInitpGroup(KD kd)
 
 /*
  ** Calculates the density "center" for all the groups.
- ** It uses the moving particle mean position to determine this.
+ ** It uses the moving particles mean position to determine this.
  ** Must call kdInitpGroup() before calling this function.
  */
 void kdCalcCenter(KD kd)
@@ -1488,7 +1488,8 @@ void kdOutStats(KD kd,char *pszFile, float fDensMin, float fTempMax)
 	PINIT *q;
 	KDN *pkdn;
 	float hx,hy,hz,dx,dy,dz;
-	float fTotMass, fGasMass, fStarMass, fVcirc;
+	float fTotMass, fGasMass, fStarMass, fHalfMass;
+	float fVcirc;
 	float flVcirc;
 	float fmVcirc;
 
@@ -1538,6 +1539,11 @@ void kdOutStats(KD kd,char *pszFile, float fDensMin, float fTempMax)
 			q[j].fBall2 = radius2;
 			}
 	    qsort(q,n,sizeof(PINIT),CmpRadius);
+		/*
+		 ** Quick, we need the half mass first.
+		 */
+		fHalfMass = 0.0;
+		for (j=0;j<n++j) fHalfMass += 0.5*q[j].fMass;
 	    fGasMass = fStarMass = fTotMass = fVcirc = 0.0;
 	    fmVcirc = 0.0;
 	    for(j = 0; j < n; j++) {
@@ -1549,13 +1555,14 @@ void kdOutStats(KD kd,char *pszFile, float fDensMin, float fTempMax)
 				fGasMass += q[j].fMass;
 			if (kdParticleType(kd,q[j].iOrder) == STAR)
 				fStarMass += q[j].fMass;
-			if(j == n/2)
+			if (fTotMass > fHalfMass && fmVcirc == 0.0) {
 				fmVcirc = kd->G*fTotMass/sqrt(q[j].fBall2); 
+				}
 			}
-	    flVcirc = sqrt(kd->G*fTotMass/sqrt(q[n-1].fBall2));
+	    flVcirc = kd->G*fTotMass/sqrt(q[n-1].fBall2);
 	    fprintf(fp, "%d %d %g %g %g %g %g %g %g %g %g %g %g %g %g\n", i, n,
 				fTotMass, fGasMass, fStarMass, sqrt(fVcirc),
-				fmVcirc, flVcirc, sqrt(q[n-1].fBall2),
+				sqrt(fmVcirc), sqrt(flVcirc), sqrt(q[n-1].fBall2),
 				kd->pGroup[i].rCenter[0],
 				kd->pGroup[i].rCenter[1],
 				kd->pGroup[i].rCenter[2], 
