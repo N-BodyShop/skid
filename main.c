@@ -16,6 +16,7 @@ void usage(void)
 	fprintf(stderr,"USAGE:\n");
 	fprintf(stderr,"skid -tau <fLinkLength> [OPTIONAL ARGUMENTS]\n");
 	fprintf(stderr,"	 reads TIPSY BINARY input file from stdin\n");
+	fprintf(stderr,"     [-std]\n");
 	fprintf(stderr,"COSMOLOGY and UNITS arguments:\n");
 	fprintf(stderr,"     [-z <fRedShift>] [-O <fOmega>]\n");
 	fprintf(stderr,"     [-G <fGravConst>] [-H <fHubble>]\n");
@@ -46,6 +47,7 @@ void main(int argc,char **argv)
 	int bTau,bCvg,bScoop,nSmooth,nMembers,bNoUnbind,bUnbindOnly,iSoftType;
 	int bEps,bOutRay,bOutDens,bGasAndDark,bOutStats,bForceInitialCut;
 	int bPeriodic;
+	int bStandard;
 	float fTau,z,Omega0,G,H0,fDensMin,fTempMax,fMassMax,fCvg,fScoop,fEps;
 	float fPeriod[3],fCenter[3];
 	char achGroup[256],achName[256];
@@ -73,6 +75,10 @@ void main(int argc,char **argv)
 	 ** bTau flag to make sure user has at least specified the -tau argument.
 	 */
 	bTau = 0;
+	/*
+	 * Default tipsy native format.
+	 */
+	bStandard = 0;
 	/*
 	 ** Default Cosmological parameters.
 	 */
@@ -286,6 +292,10 @@ void main(int argc,char **argv)
 			bOutDiag = 1;
 			++i;
 			}
+		else if (!strcmp(argv[i],"-std")) {
+		        bStandard = 1;
+			++i;
+		        }
 		else usage();
 		}
 	/*
@@ -300,7 +310,7 @@ void main(int argc,char **argv)
 	fStep = 0.5*fCvg;
 
 	kdInit(&kd,nBucket,fPeriod,fCenter,bOutDiag);
-	kdReadTipsy(kd,stdin);
+	kdReadTipsy(kd,stdin, bStandard);
 	if (bUnbindOnly) {
 		/*
 		 ** to provide compatibility with v1.2 skid we need to strip off
@@ -323,7 +333,7 @@ void main(int argc,char **argv)
 		strcpy(achFile,achGroup);
 		strcat(achFile,".gtp");
 		kdInitpGroup(kd);
-		kdReadCenter(kd,achFile);
+		kdReadCenter(kd,achFile, bStandard);
 		goto UnbindOnly;
 		}
 	kdScatterActive(kd,bGasAndDark);
@@ -437,7 +447,7 @@ void main(int argc,char **argv)
 	kdOutGroup(kd,achFile);
 	strcpy(achFile,achName);
 	strcat(achFile,".gtp");
-	kdWriteGroup(kd,achFile);
+	kdWriteGroup(kd,achFile, bStandard);
 	if (bOutStats) {
 	    strcpy(achFile,achName);
 	    strcat(achFile,".stat");

@@ -4,12 +4,28 @@
 #include <math.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <rpc/types.h>
+#include <rpc/xdr.h>
 #include <assert.h>
 #include <limits.h>
 #include "kd.h"
 #include "grav.h"
 #include "tipsydefs.h"
 
+
+int xdrHeader(XDR *pxdrs,struct dump *ph)
+{
+	int pad = 0;
+	
+	if (!xdr_double(pxdrs,&ph->time)) return 0;
+	if (!xdr_int(pxdrs,&ph->nbodies)) return 0;
+	if (!xdr_int(pxdrs,&ph->ndim)) return 0;
+	if (!xdr_int(pxdrs,&ph->nsph)) return 0;
+	if (!xdr_int(pxdrs,&ph->ndark)) return 0;
+	if (!xdr_int(pxdrs,&ph->nstar)) return 0;
+	if (!xdr_int(pxdrs,&pad)) return 0;
+	return 1;
+	}
 
 void kdTime(KD kd,int *puSecond,int *puMicro)
 {
@@ -95,7 +111,7 @@ int kdParticleType(KD kd,int iOrder)
 	}
 
 
-int kdReadTipsy(KD kd,FILE *fp)
+int kdReadTipsy(KD kd,FILE *fp, int bStandard)
 {
 	PINIT *p;
 	int i,j;
@@ -103,10 +119,19 @@ int kdReadTipsy(KD kd,FILE *fp)
 	struct gas_particle gp;
 	struct dark_particle dp;
 	struct star_particle sp;
+	XDR xdrs;
 
 	if (kd->bOutDiag) puts(">> kdReadTipsy()");
 	fflush(stdout);
-	fread(&h,sizeof(struct dump),1,fp);
+	if (bStandard) {
+	    assert(sizeof(Real)==sizeof(float)); /* Otherwise, this XDR stuff
+						    ain't gonna work */
+	    xdrstdio_create(&xdrs, fp, XDR_DECODE);
+	    xdrHeader(&xdrs,&h);
+	    }
+	else {
+	    fread(&h,sizeof(struct dump),1,fp);
+	    }
 	kd->inType = 0;
 	kd->nDark = h.ndark;
 	if (kd->nDark) kd->inType |= DARK;
@@ -133,7 +158,13 @@ int kdReadTipsy(KD kd,FILE *fp)
 		p[i].fDensity = 0.0;
 		switch (kdParticleType(kd,i)) {
 		case (GAS):
-			fread(&gp,sizeof(struct gas_particle),1,fp);
+			if (bStandard) {
+			    xdr_vector(&xdrs, (char *) &gp, 12,
+				       sizeof(Real), (xdrproc_t) xdr_float);
+			    }
+			else {
+			    fread(&gp,sizeof(struct gas_particle),1,fp);
+			    }
 			p[i].fMass = gp.mass;
 			p[i].fSoft = gp.hsmooth;
 			p[i].fTemp = gp.temp;
@@ -143,7 +174,13 @@ int kdReadTipsy(KD kd,FILE *fp)
 				}
 			break;
 		case (DARK):
-			fread(&dp,sizeof(struct dark_particle),1,fp);
+			if (bStandard) {
+			    xdr_vector(&xdrs, (char *) &dp, 9,
+				       sizeof(Real), (xdrproc_t) xdr_float);
+			    }
+			else {
+			    fread(&dp,sizeof(struct dark_particle),1,fp);
+			    }
 			p[i].fMass = dp.mass;
 			p[i].fSoft = dp.eps;
 			p[i].fTemp = 0.0;
@@ -153,7 +190,13 @@ int kdReadTipsy(KD kd,FILE *fp)
 				}
 			break;
 		case (STAR):
-			fread(&sp,sizeof(struct star_particle),1,fp);
+			if (bStandard) {
+			    xdr_vector(&xdrs, (char *) &sp, 11,
+				       sizeof(Real), (xdrproc_t) xdr_float);
+			    }
+			else {
+			    fread(&sp,sizeof(struct star_particle),1,fp);
+			    }
 			p[i].fMass = sp.mass;
 			p[i].fSoft = sp.eps;
 			p[i].fTemp = 0.0;
@@ -164,6 +207,7 @@ int kdReadTipsy(KD kd,FILE *fp)
 			break;
 			}
 		}
+	if (bStandard) xdr_destroy(&xdrs);
 	if (kd->bOutDiag) puts("<< kdReadTipsy()");
 	fflush(stdout);
 	return(kd->nParticles);
@@ -1021,7 +1065,7 @@ void kdCalcCenter(KD kd)
  ** exists, otherwise it sets the center to be the center-of-mass.
  ** Requires that kdInitpGroup() has been called first!
  */
-void kdReadCenter(KD kd,char *pszGtp)
+void kdReadCenter(KD kd,char *pszGtp, int bStandard)
 {
 	FILE *fp;
 	PINIT *p;
@@ -1029,6 +1073,7 @@ void kdReadCenter(KD kd,char *pszGtp)
 	struct star_particle sp;
 	int i,j,iGroup,bMismatch;
 	float del;
+	XDR xdrs;
 
 	if (kd->bOutDiag) puts(">> kdReadCenter()");
 	fflush(stdout);
@@ -1037,7 +1082,13 @@ void kdReadCenter(KD kd,char *pszGtp)
 		/*
 		 ** Read from the file.
 		 */
-		fread(&h,sizeof(struct dump),1,fp);
+		if (bStandard) {
+		    xdrstdio_create(&xdrs, fp, XDR_DECODE);
+		    xdrHeader(&xdrs,&h);
+		    }
+		else {
+		    fread(&h,sizeof(struct dump),1,fp);
+		    }
 		/*
 		 ** Make sure that the number of Group-particles in this file
 		 ** agrees with that which we set before in kdInGroup!
@@ -1052,11 +1103,23 @@ void kdReadCenter(KD kd,char *pszGtp)
 		 ** in the file as well. There shouldn't be any though unless
 		 ** future software uses a file interpretation of this sort.
 		 */
-		fseek(fp,h.nsph*sizeof(struct gas_particle),SEEK_CUR);
-		fseek(fp,h.ndark*sizeof(struct dark_particle),SEEK_CUR);
+		if(bStandard) {
+		    fseek(fp,h.nsph*sizeof(Real)*12,SEEK_CUR);
+		    fseek(fp,h.ndark*sizeof(Real)*9,SEEK_CUR);
+		    }
+		else {
+		    fseek(fp,h.nsph*sizeof(struct gas_particle),SEEK_CUR);
+		    fseek(fp,h.ndark*sizeof(struct dark_particle),SEEK_CUR);
+		    }
 		bMismatch = 0;
 		for (i=0;i<h.nstar;++i) {
-			fread(&sp,sizeof(struct star_particle),1,fp);
+			if (bStandard) {
+			    xdr_vector(&xdrs, (char *) &sp, 11,
+				       sizeof(Real), (xdrproc_t) xdr_float);
+			    }
+			else {
+			    fread(&sp,sizeof(struct star_particle),1,fp);
+			    }
 			/*
 			 ** Verify that the mass of each group in the .gtp file
 			 ** matches that calculated from the .grp file as a sort
@@ -1066,6 +1129,8 @@ void kdReadCenter(KD kd,char *pszGtp)
 				if (sp.mass != kd->pGroup[i+1].fMass) {
 					fprintf(stderr,"WARNING: Mismatch in group masses between\n");
 					fprintf(stderr,"         the .grp and .gtp files.\n");
+					fprintf(stderr,"         %g vs. %g\n",
+						sp.mass, kd->pGroup[i+1].fMass);
 					}
 				bMismatch = 1;
 				}
@@ -1074,6 +1139,8 @@ void kdReadCenter(KD kd,char *pszGtp)
 				kd->pGroup[i+1].vcm[j] = sp.vel[j];
 				}
 			}
+		if (bStandard) xdr_destroy(&xdrs);
+		fclose(fp);
 		}
 	else {
 		/*
@@ -1507,7 +1574,7 @@ void kdOutVector(KD kd,char *pszFile)
 	}
 
 
-void kdWriteGroup(KD kd,char *pszFile)
+void kdWriteGroup(KD kd,char *pszFile, int bStandard)
 {
 	PINIT *p;
 	int iGroup;
@@ -1516,6 +1583,7 @@ void kdWriteGroup(KD kd,char *pszFile)
 	int i,j;
 	struct dump h;
 	struct star_particle sp;
+	XDR xdrs;
 
 	if (kd->bOutDiag) puts(">> kdWriteGroup()");
 	fflush(stdout);
@@ -1551,7 +1619,15 @@ void kdWriteGroup(KD kd,char *pszFile)
 	h.nsph = 0;
 	h.ndim = 3;
 	h.time = kd->fTime;
-	fwrite(&h,sizeof(struct dump),1,fp);
+	if (bStandard) {
+	    assert(sizeof(Real)==sizeof(float)); /* Otherwise, this XDR stuff
+						    ain't gonna work */
+	    xdrstdio_create(&xdrs, fp, XDR_ENCODE);
+	    xdrHeader(&xdrs,&h);
+	    }
+	else {
+	    fwrite(&h,sizeof(struct dump),1,fp);
+	    }
 	for (i=1;i<kd->nGroup;++i) {
 		sp.mass = kd->pGroup[i].fMass;
 		for (j=0;j<3;++j) {
@@ -1562,8 +1638,15 @@ void kdWriteGroup(KD kd,char *pszFile)
 		sp.metals = 0.0;
 		sp.tform = kd->fTime;
 		sp.phi = 0.0;
-		fwrite(&sp,sizeof(struct star_particle),1,fp);
+		if (bStandard) {
+		    xdr_vector(&xdrs, (char *) &sp, 11,
+			       sizeof(Real), (xdrproc_t) xdr_float);
+		    }
+		else {
+		    fwrite(&sp,sizeof(struct star_particle),1,fp);
+		    }
 		}
+	if (bStandard) xdr_destroy(&xdrs);
 	fclose(fp);
 	if (kd->bOutDiag) puts("<< kdWriteGroup()");
 	fflush(stdout);
