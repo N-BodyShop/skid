@@ -7,8 +7,8 @@
 CC=cc
 #CFLAGS	=	-O2
 #Following added for gcc
-#CFLAGS = -O3 -funroll-loops
-CFLAGS = -O3 -mips4 -64 -r10000
+CFLAGS = -O3 -funroll-loops
+#CFLAGS = -O3 -mips4 -64 -r10000
 LIBS	=   -lm
 
 default:	skid totipnat

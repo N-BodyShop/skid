@@ -1391,6 +1391,7 @@ void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark)
 			 */
 			iBig = 0;
 			fTotBig = -1.0;
+			iMin = 0;
 			fTotMin = 1.0;
 			for (i=0;i<n;++i) {
 				dv2 = 0.0;
@@ -1403,7 +1404,7 @@ void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark)
 					fTotBig = fTot;
 					iBig = i;
 					}
-				else if (fTot < fTotMin) {
+				if (fTot < fTotMin) {
 					fTotMin = fTot;
 					iMin = i;
 					}
@@ -1447,8 +1448,6 @@ void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark)
 				kdSubPot(kd,q,n,&q[n],iSoftType,pdPot);
 				}
 			}
-		free(pdPot);		
-		free(q);
 		kd->pGroup[iGroup].fMass = dMass;
 		for (j=0;j<3;++j) {
 			kd->pGroup[iGroup].vcm[j] = vcm[j];
@@ -1459,6 +1458,8 @@ void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark)
 			if (dx <= -hx) dx += 2*hx;
 			kd->pGroup[iGroup].rBound[j] = dx;
 			}
+		free(pdPot);		
+		free(q);
 		}
 	printf("Number of particles Unbound:%d\n",nUnbind);
 	fflush(stdout);
