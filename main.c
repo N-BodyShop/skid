@@ -404,8 +404,6 @@ void main(int argc,char **argv)
 	kdInitpGroup(kd);
 	kdCalcCenter(kd);
  UnbindOnly:
-	kdGroupOrder(kd);
-	kdTooSmall(kd,nMembers);
 	if (!bNoUnbind) {
 		/*
 		 ** Set the cosmological parameters.
@@ -424,6 +422,9 @@ void main(int argc,char **argv)
 		kdTime(kd,&sec4,&usec4);
 		kdTooSmall(kd,nMembers);
 		}
+	else {
+		kdTooSmall(kd,nMembers);
+		}
 	/*
 	 ** Output group files.
 	 */
@@ -437,7 +438,7 @@ void main(int argc,char **argv)
 	    strcpy(achFile,achName);
 	    strcat(achFile,".stat");
 	    kdOutStats(kd,achFile,fDensMin,fTempMax);
-	}
+		}
 	printf("SKID CPU Time:\n");
 	if (!bUnbindOnly) {
 		printf("   Initial Density:    %d.%06d\n",sec1,usec1);

@@ -1061,11 +1061,48 @@ void kdReadCenter(KD kd,char *pszGtp)
 	}
 
 
+void kdGroupOrder(KD kd)
+{
+	PINIT *p,t;
+	int i,j,iGroup,pi;
+	
+	/*
+	 ** First split off the "non-group" particles.
+	 */
+	if (kd->kdGroup != NULL) free(kd->kdGroup);
+	kd->kdGroup = (KDN *)malloc(kd->nGroup*sizeof(KDN));
+	assert(kd->kdGroup != NULL);
+	p = kd->pInit;
+	pi = 0;
+	for (iGroup=0;iGroup<kd->nGroup;++iGroup) {
+		i = pi;
+		j = kd->nParticles-1;
+		while (1) {
+			while (kd->piGroup[p[i].iOrder] == iGroup)
+				if (++i > j) goto done;
+			while (kd->piGroup[p[j].iOrder] != iGroup)
+				if (i > --j) goto done;
+			t = p[i];
+			p[i] = p[j];
+			p[j] = t;
+			}
+	done:
+		kd->kdGroup[iGroup].pLower = pi;
+		kd->kdGroup[iGroup].pUpper = i-1;
+		pi = i;
+		}
+	}
+
+
+/*
+ ** This function maintains STRICT group order!
+ */
 void kdTooSmall(KD kd,int nMembers)
 {
 	int *pnMembers,*pMap;
 	int i,pi,nGroup;
 
+	kdGroupOrder(kd);
 	pnMembers = (int *)malloc(kd->nGroup*sizeof(int));
 	assert(pnMembers != NULL);
 	pMap = (int *)malloc(kd->nGroup*sizeof(int));
@@ -1075,7 +1112,7 @@ void kdTooSmall(KD kd,int nMembers)
 		++pnMembers[kd->piGroup[pi]];
 		}
 	for (i=1;i<kd->nGroup;++i) {
-		if (pnMembers[i] < nMembers) {
+		if (pnMembers[i] <= nMembers) {
 			pnMembers[i] = 0;
 			}
 		}
@@ -1104,41 +1141,13 @@ void kdTooSmall(KD kd,int nMembers)
 	free(pMap);
 	free(pnMembers);
 	kd->nGroup = nGroup;
+	kdGroupOrder(kd);
 	}
 
 
-void kdGroupOrder(KD kd)
-{
-	PINIT *p,t;
-	int i,j,iGroup,pi;
-	
-	/*
-	 ** First split off the "non-group" particles.
-	 */	
-	kd->kdGroup = (KDN *)malloc(kd->nGroup*sizeof(KDN));
-	assert(kd->kdGroup != NULL);
-	p = kd->pInit;
-	pi = 0;
-	for (iGroup=0;iGroup<kd->nGroup;++iGroup) {
-		i = pi;
-		j = kd->nParticles-1;
-		while (1) {
-			while (kd->piGroup[p[i].iOrder] == iGroup)
-				if (++i > j) goto done;
-			while (kd->piGroup[p[j].iOrder] != iGroup)
-				if (i > --j) goto done;
-			t = p[i];
-			p[i] = p[j];
-			p[j] = t;
-			}
-	done:
-		kd->kdGroup[iGroup].pLower = pi;
-		kd->kdGroup[iGroup].pUpper = i-1;
-		pi = i;
-		}
-	}
-
-
+/*
+ ** This function maintains STRICT group order!
+ */
 void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark)
 {
 	PINIT *q,t;
@@ -1148,6 +1157,7 @@ void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark)
 	double dMass,rcm[3],vcm[3],*pdPot,dPot;
 	int nUnbind = 0;
 
+	kdGroupOrder(kd);
 	hx = 0.5*kd->fPeriod[0];
 	hy = 0.5*kd->fPeriod[1];
 	hz = 0.5*kd->fPeriod[2];
@@ -1250,7 +1260,6 @@ void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark)
 				}
 			++nUnbind;
 			--n;
-			--kd->kdGroup[iGroup].pUpper;
 			/*
 			 ** Swap particle iBig and last, swap also corresp. potential E.
 			 */
@@ -1276,6 +1285,7 @@ void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark)
 		}
 	printf("Number of particles Unbound:%d\n",nUnbind);
 	fflush(stdout);
+	kdGroupOrder(kd);
 	}
 
 
@@ -1495,6 +1505,7 @@ void kdOutStats(KD kd,char *pszFile, float fDensMin, float fTempMax)
 
 	fp = fopen(pszFile,"w");
 	assert(fp != NULL);
+	kdGroupOrder(kd);
 	hx = 0.5*kd->fPeriod[0];
 	hy = 0.5*kd->fPeriod[1];
 	hz = 0.5*kd->fPeriod[2];
@@ -1511,7 +1522,8 @@ void kdOutStats(KD kd,char *pszFile, float fDensMin, float fTempMax)
 		assert(q != NULL);
 		/*
 		 ** Make all group particles have coordinates relative to 
-		 ** a group reference point, given by pGroup[i].rel.
+		 ** a group reference point, given by pGroup[iGroup].rCenter
+		 ** in this case.
 		 */
 		for (i=0,pi=pkdn->pLower;i<n;++i,++pi) {
 			dx = kd->pInit[pi].r[0] - kd->pGroup[iGroup].rCenter[0];
@@ -1543,7 +1555,7 @@ void kdOutStats(KD kd,char *pszFile, float fDensMin, float fTempMax)
 		 ** Quick, we need the half mass first.
 		 */
 		fHalfMass = 0.0;
-		for (j=0;j<n++j) fHalfMass += 0.5*q[j].fMass;
+		for (j=0;j<n;++j) fHalfMass += 0.5*q[j].fMass;
 	    fGasMass = fStarMass = fTotMass = fVcirc = 0.0;
 	    fmVcirc = 0.0;
 	    for(j = 0; j < n; j++) {
@@ -1560,15 +1572,16 @@ void kdOutStats(KD kd,char *pszFile, float fDensMin, float fTempMax)
 				}
 			}
 	    flVcirc = kd->G*fTotMass/sqrt(q[n-1].fBall2);
-	    fprintf(fp, "%d %d %g %g %g %g %g %g %g %g %g %g %g %g %g\n", i, n,
+	    fprintf(fp, "%d %d %g %g %g %g %g %g %g %g %g %g %g %g %g\n",iGroup,n,
 				fTotMass, fGasMass, fStarMass, sqrt(fVcirc),
 				sqrt(fmVcirc), sqrt(flVcirc), sqrt(q[n-1].fBall2),
-				kd->pGroup[i].rCenter[0],
-				kd->pGroup[i].rCenter[1],
-				kd->pGroup[i].rCenter[2], 
-				kd->pGroup[i].vcm[0],
-				kd->pGroup[i].vcm[1],
-				kd->pGroup[i].vcm[2]);
+				kd->pGroup[iGroup].rCenter[0],
+				kd->pGroup[iGroup].rCenter[1],
+				kd->pGroup[iGroup].rCenter[2], 
+				kd->pGroup[iGroup].vcm[0],
+				kd->pGroup[iGroup].vcm[1],
+				kd->pGroup[iGroup].vcm[2]);
+		free(q);
 		}
 	fclose(fp);
 	}
