@@ -23,6 +23,7 @@ void usage(void)
 	fprintf(stderr,"     [-s <nSmooth>] [-d <fMinDensity>] [-t <fMaxTemp>]\n");
 	fprintf(stderr,"     [-cvg <fConvergeRadius>] [-scoop <fScoopRadius>]\n");
 	fprintf(stderr,"     [-m <nMinMembers>] [-nu] [-unbind <GroupFile>]\n");
+	fprintf(stderr,"     [-M <fMaxMass>] [-mall]\n");
 	fprintf(stderr,"GRAVITATIONAL SOFTENING arguments:\n");
 	fprintf(stderr,"     [-spline] [-plummer] [-e <fSoft>]\n"); 
 	fprintf(stderr,"PERIODIC BOX specification:\n");
@@ -31,7 +32,7 @@ void usage(void)
 	fprintf(stderr,"     [-c <xyzCenter>]\n");
 	fprintf(stderr,"     [-cx <xCenter>] [-cy <yCenter>] [-cz <zCenter>]\n");
 	fprintf(stderr,"OUTPUT arguments:\n");
-	fprintf(stderr,"     [-o <Output Name>] [-ray] [-den]\n");
+	fprintf(stderr,"     [-o <Output Name>] [-ray] [-den] [-stats]\n");
 	fprintf(stderr,"\nSee man page skid(1).\n");
 	exit(1);
 	}
@@ -45,7 +46,8 @@ void main(int argc,char **argv)
 	 */
 	int bTau,bCvg,bScoop,nSmooth,nMembers,bNoUnbind,bUnbindOnly,iSoftType;
 	int bEps,bOutRay,bOutDens;
-	float fTau,z,Omega0,G,H0,fDensMin,fTempMax,fCvg,fScoop,fEps;
+	int bMoveAll, bOutStats;
+	float fTau,z,Omega0,G,H0,fDensMin,fTempMax,fMassMax,fCvg,fScoop,fEps;
 	float fPeriod[3],fCenter[3];
 	char achGroup[256],achName[256];
 	/*
@@ -60,6 +62,7 @@ void main(int argc,char **argv)
 	int sec5,usec5;
 	char achFile[256];
 	
+	fpex_();
 	printf("SKID v1.2: Joachim Stadel, Jan. 1995\n");
 	/*
 	 ** Bucket size set to 16, user cannot affect this!
@@ -82,10 +85,13 @@ void main(int argc,char **argv)
 	nSmooth = 64;
 	fDensMin = 0.0;
 	fTempMax = HUGE;
+	fMassMax = HUGE;
 	bCvg = 0;
 	bScoop = 0;
+	bMoveAll = 0;
 	nMembers = 8;
 	bNoUnbind = 0;
+	bUnbindOnly = 0;
 	/*
 	 ** Default gravitational parameters.
 	 */
@@ -104,6 +110,7 @@ void main(int argc,char **argv)
 	strcpy(achName,"skid");
 	bOutRay = 0;
 	bOutDens = 0;
+	bOutStats = 0;
 	/*
 	 ** Now get the command line arguments!
 	 */
@@ -158,6 +165,12 @@ void main(int argc,char **argv)
 			fTempMax = atof(argv[i]);
 			++i;
 			}
+		else if (!strcmp(argv[i],"-M")) {
+			++i;
+			if (i >= argc) usage();
+			fMassMax = atof(argv[i]);
+			++i;
+			}
 		else if (!strcmp(argv[i],"-cvg")) {
 			++i;
 			if (i >= argc) usage();
@@ -176,6 +189,10 @@ void main(int argc,char **argv)
 			++i;
 			if (i >= argc) usage();
 			nMembers = atoi(argv[i]);
+			++i;
+			}
+		else if (!strcmp(argv[i],"-mall")) {
+			bMoveAll = 1;
 			++i;
 			}
 		else if (!strcmp(argv[i],"-nu")) {
@@ -270,6 +287,10 @@ void main(int argc,char **argv)
 			bOutDens = 1;
 			++i;
 			}
+		else if (!strcmp(argv[i],"-stats")) {
+			bOutStats = 1;
+			++i;
+			}
 		else usage();
 		}
 	/*
@@ -289,7 +310,7 @@ void main(int argc,char **argv)
 		kdInGroup(kd,achGroup);
 		goto UnbindOnly;
 		}
-	kdScatterActive(kd);
+	kdScatterActive(kd, bMoveAll);
 	kdBuildTree(kd);
 	smInit(&smx,kd,nSmooth);
 	kdTime(kd,&sec1,&usec1);
@@ -309,7 +330,7 @@ void main(int argc,char **argv)
 	 ** number of scatterers if possible.
 	 */
 	kdTime(kd,&sec2,&usec2);
-	kdInitMove(kd,fDensMin,fTempMax,fCvg);
+	kdInitMove(kd,fDensMin,fTempMax,fMassMax,fCvg, bMoveAll);
 	kdBuildMoveTree(kd);
 	smAccDensity(smx);
 	kdMoveParticles(kd,fStep);
@@ -377,7 +398,7 @@ void main(int argc,char **argv)
 		 ** Do the unbinding of particles.
 		 */
 		kdTime(kd,&sec4,&usec4);
-		kdUnbind(kd,iSoftType,fScoop);
+		kdUnbind(kd,iSoftType,fScoop, bMoveAll);
 		kdTime(kd,&sec4,&usec4);
 		kdTooSmall(kd,nMembers);
 		}
@@ -390,6 +411,11 @@ void main(int argc,char **argv)
 	strcpy(achFile,achName);
 	strcat(achFile,".gtp");
 	kdWriteGroup(kd,achFile);
+	if (bOutStats) {
+	    strcpy(achFile,achName);
+	    strcat(achFile,".stat");
+	    kdOutStats(kd,achFile, fDensMin, fTempMax);
+	}
 	printf("SKID CPU Time:\n");
 	if (!bUnbindOnly) {
 		printf("   Initial Density:    %d.%06d\n",sec1,usec1);

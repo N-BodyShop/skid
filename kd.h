@@ -319,8 +319,9 @@ int kdParticleType(KD,int);
 int kdReadTipsy(KD,FILE *);
 int kdBuildTree(KD);
 int kdBuildMoveTree(KD);
-void kdInitMove(KD,float,float,float);
-int kdScatterActive(KD);
+void kdInitMove(KD kd,float fDensMin,float fTempMax, float fMassMax,
+		float fCvg, int bMoveAll);
+int kdScatterActive(KD kd, int bMoveAll);
 int kdScatterCut(KD);
 void kdMoveParticles(KD,float);
 int kdPruneInactive(KD,float);
@@ -329,11 +330,12 @@ void kdFoF(KD,float);
 void kdInGroup(KD,char *);
 void kdGroupOrder(KD);
 void kdTooSmall(KD,int);
-void kdUnbind(KD,int,float);
+void kdUnbind(KD kd,int iSoftType,float fScoop, int bMoveAll);
 void kdOutGroup(KD,char *);
 void kdOutDensity(KD,char *);
 void kdOutVector(KD,char *);
 void kdWriteGroup(KD,char *);
+void kdOutStats(KD kd,char *pszFile, float fDensMin, float fTempMax);
 void kdFinish(KD);
 
 #endif
