@@ -39,34 +39,34 @@ typedef struct smContext {
 
 #define PQ_INIT(pq,n)\
 {\
-	int j;\
-	for (j=0;j<(n);++j) {\
-		if (j < 2) (pq)[j].pqFromInt = NULL;\
-		else (pq)[j].pqFromInt = &(pq)[j>>1];\
-		(pq)[j].pqFromExt = &(pq)[(j+(n))>>1];\
-		(pq)[j].p = 0;\
+	int PQ_j;\
+	for (PQ_j=0;PQ_j<(n);++PQ_j) {\
+		if (PQ_j < 2) (pq)[PQ_j].pqFromInt = NULL;\
+		else (pq)[PQ_j].pqFromInt = &(pq)[PQ_j>>1];\
+		(pq)[PQ_j].pqFromExt = &(pq)[(PQ_j+(n))>>1];\
+		(pq)[PQ_j].p = 0;\
 		}\
 	}
 
 
 #define PQ_BUILD(pq,n,q)\
 {\
-	int i,j;\
-	PQ *t,*lt;\
-	for (j=(n)-1;j>0;--j) {\
-		i = (j<<1);\
-		if (i < (n)) t = (pq)[i].pqWinner;\
-		else t = &(pq)[i-(n)];\
-		++i;\
-		if (i < (n)) lt = (pq)[i].pqWinner;\
-		else lt = &(pq)[i-(n)];\
-		if (t->fKey < lt->fKey) {\
-			(pq)[j].pqLoser = t;\
-			(pq)[j].pqWinner = lt;\
+	int PQ_i,PQ_j;\
+	PQ *PQ_t,*PQ_lt;\
+	for (PQ_j=(n)-1;PQ_j>0;--PQ_j) {\
+		PQ_i = (PQ_j<<1);\
+		if (PQ_i < (n)) PQ_t = (pq)[PQ_i].pqWinner;\
+		else PQ_t = &(pq)[PQ_i-(n)];\
+		++PQ_i;\
+		if (PQ_i < (n)) PQ_lt = (pq)[PQ_i].pqWinner;\
+		else PQ_lt = &(pq)[PQ_i-(n)];\
+		if (PQ_t->fKey < PQ_lt->fKey) {\
+			(pq)[PQ_j].pqLoser = PQ_t;\
+			(pq)[PQ_j].pqWinner = PQ_lt;\
 			}\
 		else {\
-			(pq)[j].pqLoser = lt;\
-			(pq)[j].pqWinner = t;\
+			(pq)[PQ_j].pqLoser = PQ_lt;\
+			(pq)[PQ_j].pqWinner = PQ_t;\
 			}\
 		}\
 	(q) = (pq)[1].pqWinner;\
@@ -75,15 +75,15 @@ typedef struct smContext {
 
 #define PQ_REPLACE(q)\
 {\
-    PQ *t,*lt;\
-	t = (q)->pqFromExt;\
-	while (t) {\
-		if (t->pqLoser->fKey > (q)->fKey) {\
-			lt = t->pqLoser;\
-			t->pqLoser = (q);\
-			(q) = lt;\
+    PQ *PQ_t,*PQ_lt;\
+	PQ_t = (q)->pqFromExt;\
+	while (PQ_t) {\
+		if (PQ_t->pqLoser->fKey > (q)->fKey) {\
+			PQ_lt = PQ_t->pqLoser;\
+			PQ_t->pqLoser = (q);\
+			(q) = PQ_lt;\
 			}\
-		t = t->pqFromInt;\
+		PQ_t = PQ_t->pqFromInt;\
 		}\
 	}
 

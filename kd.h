@@ -97,91 +97,92 @@ typedef struct kdContext {
 
 #define INTERSECT(c,cp,fBall2,lx,ly,lz,x,y,z,sx,sy,sz)\
 {\
-	float dx,dy,dz,dx1,dy1,dz1,fDist2;\
-	dx = c[cp].bnd.fMin[0]-x;\
-	dx1 = x-c[cp].bnd.fMax[0];\
-	dy = c[cp].bnd.fMin[1]-y;\
-	dy1 = y-c[cp].bnd.fMax[1];\
-	dz = c[cp].bnd.fMin[2]-z;\
-	dz1 = z-c[cp].bnd.fMax[2];\
-	if (dx > 0.0) {\
-		dx1 += lx;\
-		if (dx1 < dx) {\
-			fDist2 = dx1*dx1;\
+	float INTRSCT_dx,INTRSCT_dy,INTRSCT_dz;\
+	float INTRSCT_dx1,INTRSCT_dy1,INTRSCT_dz1,INTRSCT_fDist2;\
+	INTRSCT_dx = c[cp].bnd.fMin[0]-x;\
+	INTRSCT_dx1 = x-c[cp].bnd.fMax[0];\
+	INTRSCT_dy = c[cp].bnd.fMin[1]-y;\
+	INTRSCT_dy1 = y-c[cp].bnd.fMax[1];\
+	INTRSCT_dz = c[cp].bnd.fMin[2]-z;\
+	INTRSCT_dz1 = z-c[cp].bnd.fMax[2];\
+	if (INTRSCT_dx > 0.0) {\
+		INTRSCT_dx1 += lx;\
+		if (INTRSCT_dx1 < INTRSCT_dx) {\
+			INTRSCT_fDist2 = INTRSCT_dx1*INTRSCT_dx1;\
 			sx = x+lx;\
 			}\
 		else {\
-			fDist2 = dx*dx;\
+			INTRSCT_fDist2 = INTRSCT_dx*INTRSCT_dx;\
 			sx = x;\
 			}\
-		if (fDist2 > fBall2) goto GetNextCell;\
+		if (INTRSCT_fDist2 > fBall2) goto GetNextCell;\
 		}\
-	else if (dx1 > 0.0) {\
-		dx += lx;\
-		if (dx < dx1) {\
-			fDist2 = dx*dx;\
+	else if (INTRSCT_dx1 > 0.0) {\
+		INTRSCT_dx += lx;\
+		if (INTRSCT_dx < INTRSCT_dx1) {\
+			INTRSCT_fDist2 = INTRSCT_dx*INTRSCT_dx;\
 			sx = x-lx;\
 			}\
 		else {\
-			fDist2 = dx1*dx1;\
+			INTRSCT_fDist2 = INTRSCT_dx1*INTRSCT_dx1;\
 			sx = x;\
 			}\
-		if (fDist2 > fBall2) goto GetNextCell;\
+		if (INTRSCT_fDist2 > fBall2) goto GetNextCell;\
 		}\
 	else {\
-		fDist2 = 0.0;\
+		INTRSCT_fDist2 = 0.0;\
 		sx = x;\
 		}\
-	if (dy > 0.0) {\
-		dy1 += ly;\
-		if (dy1 < dy) {\
-			fDist2 += dy1*dy1;\
+	if (INTRSCT_dy > 0.0) {\
+		INTRSCT_dy1 += ly;\
+		if (INTRSCT_dy1 < INTRSCT_dy) {\
+			INTRSCT_fDist2 += INTRSCT_dy1*INTRSCT_dy1;\
 			sy = y+ly;\
 			}\
 		else {\
-			fDist2 += dy*dy;\
+			INTRSCT_fDist2 += INTRSCT_dy*INTRSCT_dy;\
 			sy = y;\
 			}\
-		if (fDist2 > fBall2) goto GetNextCell;\
+		if (INTRSCT_fDist2 > fBall2) goto GetNextCell;\
 		}\
-	else if (dy1 > 0.0) {\
-		dy += ly;\
-		if (dy < dy1) {\
-			fDist2 += dy*dy;\
+	else if (INTRSCT_dy1 > 0.0) {\
+		INTRSCT_dy += ly;\
+		if (INTRSCT_dy < INTRSCT_dy1) {\
+			INTRSCT_fDist2 += INTRSCT_dy*INTRSCT_dy;\
 			sy = y-ly;\
 			}\
 		else {\
-			fDist2 += dy1*dy1;\
+			INTRSCT_fDist2 += INTRSCT_dy1*INTRSCT_dy1;\
 			sy = y;\
 			}\
-		if (fDist2 > fBall2) goto GetNextCell;\
+		if (INTRSCT_fDist2 > fBall2) goto GetNextCell;\
 		}\
 	else {\
 		sy = y;\
 		}\
-	if (dz > 0.0) {\
-		dz1 += lz;\
-		if (dz1 < dz) {\
-			fDist2 += dz1*dz1;\
+	if (INTRSCT_dz > 0.0) {\
+		INTRSCT_dz1 += lz;\
+		if (INTRSCT_dz1 < INTRSCT_dz) {\
+			INTRSCT_fDist2 += INTRSCT_dz1*INTRSCT_dz1;\
 			sz = z+lz;\
 			}\
 		else {\
-			fDist2 += dz*dz;\
+			INTRSCT_fDist2 += INTRSCT_dz*INTRSCT_dz;\
 			sz = z;\
 			}\
-		if (fDist2 > fBall2) goto GetNextCell;\
+		if (INTRSCT_fDist2 > fBall2) goto GetNextCell;\
 		}\
-	else if (dz1 > 0.0) {\
-		dz += lz;\
-		if (dz < dz1) {\
-			fDist2 += dz*dz;\
+	else if (INTRSCT_dz1 > 0.0) {\
+		INTRSCT_dz += lz;\
+		if (INTRSCT_dz < INTRSCT_dz1) {\
+			INTRSCT_fDist2 += INTRSCT_dz*INTRSCT_dz;\
 			sz = z-lz;\
 			}\
 		else {\
-			fDist2 += dz1*dz1;\
+			INTRSCT_fDist2 += INTRSCT_dz1*INTRSCT_dz1;\
 			sz = z;\
 			}\
-		if (fDist2 > fBall2) goto GetNextCell;\
+		if (INTRSCT_fDist2 > fBall2) goto GetNextCell;\
 		}\
 	else {\
 		sz = z;\
@@ -191,120 +192,122 @@ typedef struct kdContext {
 
 #define INTERCONT(c,cp,fBall2,lx,ly,lz,x,y,z,sx,sy,sz)\
 {\
-	float dx,dy,dz,dx1,dy1,dz1,fDist2,fMax2;\
-	dx = c[cp].bnd.fMin[0]-x;\
-	dx1 = x-c[cp].bnd.fMax[0];\
-	dy = c[cp].bnd.fMin[1]-y;\
-	dy1 = y-c[cp].bnd.fMax[1];\
-	dz = c[cp].bnd.fMin[2]-z;\
-	dz1 = z-c[cp].bnd.fMax[2];\
-	if (dx > 0.0) {\
-		if (dx1+lx < dx) {\
-			dx1 += lx;\
-			dx -= lx;\
+	float INTRSCT_dx,INTRSCT_dy,INTRSCT_dz;\
+	float INTRSCT_dx1,INTRSCT_dy1,INTRSCT_dz1;\
+	float INTRSCT_fDist2,INTRSCT_fMax2;\
+	INTRSCT_dx = c[cp].bnd.fMin[0]-x;\
+	INTRSCT_dx1 = x-c[cp].bnd.fMax[0];\
+	INTRSCT_dy = c[cp].bnd.fMin[1]-y;\
+	INTRSCT_dy1 = y-c[cp].bnd.fMax[1];\
+	INTRSCT_dz = c[cp].bnd.fMin[2]-z;\
+	INTRSCT_dz1 = z-c[cp].bnd.fMax[2];\
+	if (INTRSCT_dx > 0.0) {\
+		if (INTRSCT_dx1+lx < INTRSCT_dx) {\
+			INTRSCT_dx1 += lx;\
+			INTRSCT_dx -= lx;\
 			sx = x+lx;\
-			fDist2 = dx1*dx1;\
-			fMax2 = dx*dx;\
+			INTRSCT_fDist2 = INTRSCT_dx1*INTRSCT_dx1;\
+			INTRSCT_fMax2 = INTRSCT_dx*INTRSCT_dx;\
 			}\
 		else {\
 			sx = x;\
-			fDist2 = dx*dx;\
-			fMax2 = dx1*dx1;\
+			INTRSCT_fDist2 = INTRSCT_dx*INTRSCT_dx;\
+			INTRSCT_fMax2 = INTRSCT_dx1*INTRSCT_dx1;\
 			}\
-		if (fDist2 > fBall2) goto GetNextCell;\
+		if (INTRSCT_fDist2 > fBall2) goto GetNextCell;\
 		}\
-	else if (dx1 > 0.0) {\
-		if (dx+lx < dx1) {\
-		    dx += lx;\
-			dx1 -= lx;\
+	else if (INTRSCT_dx1 > 0.0) {\
+		if (INTRSCT_dx+lx < INTRSCT_dx1) {\
+		    INTRSCT_dx += lx;\
+			INTRSCT_dx1 -= lx;\
 			sx = x-lx;\
-			fDist2 = dx*dx;\
-			fMax2 = dx1*dx1;\
+			INTRSCT_fDist2 = INTRSCT_dx*INTRSCT_dx;\
+			INTRSCT_fMax2 = INTRSCT_dx1*INTRSCT_dx1;\
 			}\
 		else {\
 			sx = x;\
-			fDist2 = dx1*dx1;\
-			fMax2 = dx*dx;\
+			INTRSCT_fDist2 = INTRSCT_dx1*INTRSCT_dx1;\
+			INTRSCT_fMax2 = INTRSCT_dx*INTRSCT_dx;\
 			}\
-		if (fDist2 > fBall2) goto GetNextCell;\
+		if (INTRSCT_fDist2 > fBall2) goto GetNextCell;\
 		}\
 	else {\
 		sx = x;\
-		fDist2 = 0.0;\
-		if (dx < dx1) fMax2 = dx*dx;\
-		else fMax2 = dx1*dx1;\
+		INTRSCT_fDist2 = 0.0;\
+		if (INTRSCT_dx < INTRSCT_dx1) INTRSCT_fMax2 = INTRSCT_dx*INTRSCT_dx;\
+		else INTRSCT_fMax2 = INTRSCT_dx1*INTRSCT_dx1;\
 		}\
-	if (dy > 0.0) {\
-		if (dy1+ly < dy) {\
-		    dy1 += ly;\
-			dy -= ly;\
+	if (INTRSCT_dy > 0.0) {\
+		if (INTRSCT_dy1+ly < INTRSCT_dy) {\
+		    INTRSCT_dy1 += ly;\
+			INTRSCT_dy -= ly;\
 			sy = y+ly;\
-			fDist2 += dy1*dy1;\
-			fMax2 += dy*dy;\
+			INTRSCT_fDist2 += INTRSCT_dy1*INTRSCT_dy1;\
+			INTRSCT_fMax2 += INTRSCT_dy*INTRSCT_dy;\
 			}\
 		else {\
 			sy = y;\
-			fDist2 += dy*dy;\
-			fMax2 += dy1*dy1;\
+			INTRSCT_fDist2 += INTRSCT_dy*INTRSCT_dy;\
+			INTRSCT_fMax2 += INTRSCT_dy1*INTRSCT_dy1;\
 			}\
-		if (fDist2 > fBall2) goto GetNextCell;\
+		if (INTRSCT_fDist2 > fBall2) goto GetNextCell;\
 		}\
-	else if (dy1 > 0.0) {\
-		if (dy+ly < dy1) {\
-		    dy += ly;\
-			dy1 -= ly;\
+	else if (INTRSCT_dy1 > 0.0) {\
+		if (INTRSCT_dy+ly < INTRSCT_dy1) {\
+		    INTRSCT_dy += ly;\
+			INTRSCT_dy1 -= ly;\
 			sy = y-ly;\
-			fDist2 += dy*dy;\
-			fMax2 += dy1*dy1;\
+			INTRSCT_fDist2 += INTRSCT_dy*INTRSCT_dy;\
+			INTRSCT_fMax2 += INTRSCT_dy1*INTRSCT_dy1;\
 			}\
 		else {\
 			sy = y;\
-			fDist2 += dy1*dy1;\
-			fMax2 += dy*dy;\
+			INTRSCT_fDist2 += INTRSCT_dy1*INTRSCT_dy1;\
+			INTRSCT_fMax2 += INTRSCT_dy*INTRSCT_dy;\
 			}\
-		if (fDist2 > fBall2) goto GetNextCell;\
+		if (INTRSCT_fDist2 > fBall2) goto GetNextCell;\
 		}\
 	else {\
 		sy = y;\
-		if (dy < dy1) fMax2 += dy*dy;\
-		else fMax2 += dy1*dy1;\
+		if (INTRSCT_dy < INTRSCT_dy1) INTRSCT_fMax2 += INTRSCT_dy*INTRSCT_dy;\
+		else INTRSCT_fMax2 += INTRSCT_dy1*INTRSCT_dy1;\
 		}\
-	if (dz > 0.0) {\
-		if (dz1+lz < dz) {\
-		    dz1 += lz;\
-            dz -= lz;\
+	if (INTRSCT_dz > 0.0) {\
+		if (INTRSCT_dz1+lz < INTRSCT_dz) {\
+		    INTRSCT_dz1 += lz;\
+            INTRSCT_dz -= lz;\
 			sz = z+lz;\
-			fDist2 += dz1*dz1;\
-			fMax2 += dz*dz;\
+			INTRSCT_fDist2 += INTRSCT_dz1*INTRSCT_dz1;\
+			INTRSCT_fMax2 += INTRSCT_dz*INTRSCT_dz;\
 			}\
 		else {\
 			sz = z;\
-			fDist2 += dz*dz;\
-			fMax2 += dz1*dz1;\
+			INTRSCT_fDist2 += INTRSCT_dz*INTRSCT_dz;\
+			INTRSCT_fMax2 += INTRSCT_dz1*INTRSCT_dz1;\
 			}\
-		if (fDist2 > fBall2) goto GetNextCell;\
+		if (INTRSCT_fDist2 > fBall2) goto GetNextCell;\
 		}\
-	else if (dz1 > 0.0) {\
-		if (dz+lz < dz1) {\
-			dz += lz;\
-		    dz1 -= lz;\
+	else if (INTRSCT_dz1 > 0.0) {\
+		if (INTRSCT_dz+lz < INTRSCT_dz1) {\
+			INTRSCT_dz += lz;\
+		    INTRSCT_dz1 -= lz;\
 			sz = z-lz;\
-			fDist2 += dz*dz;\
-			fMax2 += dz1*dz1;\
+			INTRSCT_fDist2 += INTRSCT_dz*INTRSCT_dz;\
+			INTRSCT_fMax2 += INTRSCT_dz1*INTRSCT_dz1;\
 			}\
 		else {\
 			sz = z;\
-			fDist2 += dz1*dz1;\
-			fMax2 += dz*dz;\
+			INTRSCT_fDist2 += INTRSCT_dz1*INTRSCT_dz1;\
+			INTRSCT_fMax2 += INTRSCT_dz*INTRSCT_dz;\
 			}\
-		if (fDist2 > fBall2) goto GetNextCell;\
+		if (INTRSCT_fDist2 > fBall2) goto GetNextCell;\
 		}\
 	else {\
 		sz = z;\
-		if (dz < dz1) fMax2 += dz*dz;\
-		else fMax2 += dz1*dz1;\
+		if (INTRSCT_dz < INTRSCT_dz1) INTRSCT_fMax2 += INTRSCT_dz*INTRSCT_dz;\
+		else INTRSCT_fMax2 += INTRSCT_dz1*INTRSCT_dz1;\
 		}\
-	if (fMax2 < fBall2) goto ContainedCell;\
+	if (INTRSCT_fMax2 < fBall2) goto ContainedCell;\
 	}
 
 
