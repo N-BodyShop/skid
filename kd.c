@@ -1595,9 +1595,16 @@ void kdOutStats(KD kd,char *pszFile, float fDensMin, float fTempMax)
 	float fmVcirc;
 	float fRVmax;
 	float fRhmass;
+	float fVdisp;
+	float fExp;
+	float fExpHub;
 
 	if (kd->bOutDiag) puts(">> kdOutStats()");
 	fflush(stdout);
+
+	fExp = 1.0/(1.0+kd->z);
+	fExpHub = kd->H0*sqrt(1.0+kd->Omega0*kd->z);
+
 	fp = fopen(pszFile,"w");
 	assert(fp != NULL);
 	kdGroupOrder(kd);
@@ -1652,7 +1659,10 @@ void kdOutStats(KD kd,char *pszFile, float fDensMin, float fTempMax)
 		for (j=0;j<n;++j) fHalfMass += 0.5*q[j].fMass;
 	    fGasMass = fStarMass = fTotMass = fVcirc = 0.0;
 	    fmVcirc = 0.0;
+	    fVdisp = 0.0;
 	    for(j = 0; j < n; j++) {
+			int k;
+
 			fTotMass += q[j].fMass;
 			if(q[j].fBall2 > 4.0*q[j].fSoft*q[j].fSoft
 			   && kd->G*fTotMass/sqrt(q[j].fBall2) > fVcirc) {
@@ -1668,24 +1678,33 @@ void kdOutStats(KD kd,char *pszFile, float fDensMin, float fTempMax)
 				fRhmass = sqrt(q[j].fBall2);
 				fmVcirc = kd->G*fTotMass/fRhmass; 
 				}
+			for (k=0;k<3;++k) {
+				float dv = fExp*(q[j].v[k]
+						   - kd->pGroup[iGroup].vcm[k])
+				           + fExpHub*q[j].r[k];
+				fVdisp += dv*dv;
+				}
 			}
 	    flVcirc = kd->G*fTotMass/sqrt(q[n-1].fBall2);
 	    if(fVcirc == 0.0) {
 		fVcirc = flVcirc;
 		fRVmax = sqrt(q[n-1].fBall2);
 		}
+	    fVdisp = sqrt(fVdisp/(3.0*n));
 /*
  * Things to print out:
  * 1: group id, 2: number of particles, 3: total mass, 4: gas mass,
  * 5: star mass, 6: maximum circular velocity, 7: 1/2 mass circular velocity
  * 8: outer circular velocity, 9: radius of max circular velocity,
- * 10: 1/2 mass radius, 11: outer radius, 12-14: center, 15-17: CM velocity.
+ * 10: 1/2 mass radius, 11: outer radius, 12: 1-D velocity dispersion,
+ * 13-15: center, 16-18: CM velocity.
  */
-	    fprintf(fp, "%d %d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n",
+	    fprintf(fp, "%d %d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n",
 		    		iGroup,n,
 				fTotMass, fGasMass, fStarMass, sqrt(fVcirc),
 				sqrt(fmVcirc), sqrt(flVcirc),
 		    		fRVmax, fRhmass, sqrt(q[n-1].fBall2),
+		    		fVdisp,
 				kd->pGroup[iGroup].rCenter[0],
 				kd->pGroup[iGroup].rCenter[1],
 				kd->pGroup[iGroup].rCenter[2], 
