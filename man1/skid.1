@@ -30,11 +30,7 @@ GRAVITATIONAL SOFTENING arguments:
 .br
 PERIODIC BOX specification:
 .br
-     [-p <xyzPeriod>]
-.br
-     [-px <xPeriod>] [-py <yPeriod>] [-pz <zPeriod>]
-.br
-     [-c <xyzCenter>]
+     [-p <xyzPeriod>] [-c <xyzCenter>]
 .br
      [-cx <xCenter>] [-cy <yCenter>] [-cz <zCenter>]
 .br
@@ -200,24 +196,7 @@ energies of particles in each group.
 Default non-periodic in x,y and z dimensions
 .br
 Specifies that SKID take into account periodicity in all
-three dimension given by the period <xyzPeriod>. This can be used
-in place of the above as a shorthand.
-
-.B [\-px <xPeriod>]:
-Default non-periodic in x dimension
-.br
-Specifies that SKID take into account periodicity in the
-x\-dimension given by the period <xPeriod>.
-
-.B [\-py <yPeriod>] [\-pz <zPeriod>]:
-As above.
-
-.B [\-c <xyzCenter>]:
-.br
-Default box center is 0.0 in x,y and z dimensions
-.br
-For periodic simulations specifies the center of the box in
-all three dimensions. This is a shorthand to the above.
+three dimension given by the period <xyzPeriod>.
 
 .B [\-cx <xCenter>]:
 Default box center is 0.0 in x dimension
@@ -228,6 +207,13 @@ can be ignored for a non-periodic simulation.
 
 .B [\-cy <yCenter>] [\-cz <zCenter>]:
 As above.
+
+.B [\-c <xyzCenter>]:
+.br
+Default box center is 0.0 in x,y and z dimensions
+.br
+For periodic simulations specifies the center of the box in
+all three dimensions. This is a shorthand to the above.
 
 .B [\-o <Output Name>]:
 Default Output Name = "skid".

@@ -23,9 +23,7 @@ SYNOPSIS
      GRAVITATIONAL SOFTENING arguments:
           [-spline] [-plummer] [-e <fSoft>]
      PERIODIC BOX specification:
-          [-p <xyzPeriod>]
-          [-px <xPeriod>] [-py <yPeriod>] [-pz <zPeriod>]
-          [-c <xyzCenter>]
+          [-p <xyzPeriod>] [-c <xyzCenter>]
           [-cx <xCenter>] [-cy <yCenter>] [-cz <zCenter>]
      OUTPUT arguments:
           [-o <Output Name>] [-ray] [-den] [-stats]
@@ -57,6 +55,8 @@ OPTIONS
      simulation.  Most  N-body  simulations  have their units set
      such that this constant is 1.0.
 
+     [-H <fHubble>]: Default fHubble = 0.0
+     Sets  the  Hubble  constant  for  the  simulation.  If   the
 
 
 
@@ -71,11 +71,9 @@ SKID(1.3)                     SKID                      SKID(1.3)
 
 
 
-     [-H <fHubble>]: Default fHubble = 0.0
-     Sets the Hubble constant for the simulation. If the  simula-
-     tion was not performed in comoving coordinates then this can
-     be left at zero. Note that this must be set in the units  of
-     the simulation.
+     simulation  was  not  performed in comoving coordinates then
+     this can be left at zero. Note that this must be set in  the
+     units of the simulation.
 
      [-s <nSmooth>]: Default nSmooth = 64
      Specifies the number of neighbors to smooth over when  find-
@@ -123,6 +121,8 @@ SKID(1.3)                     SKID                      SKID(1.3)
      When this flag is specified, SKID will consider both the gas
      particles  and  dark  matter  particles  when grouping. This
      option has been found to be useful in some  situations,  but
+     usually  the  default  grouping  rules  are  physically more
+     relevant.
 
 
 
@@ -136,9 +136,6 @@ Stadel Release 1.3  Last change: Feb 8, 1996                    2
 SKID(1.3)                     SKID                      SKID(1.3)
 
 
-
-     usually  the  default  grouping  rules  are  physically more
-     relevant.
 
      [-unbind <GroupName>[.grp]]:
      When a group file name is specified here, SKID will take the
@@ -189,6 +186,9 @@ SKID(1.3)                     SKID                      SKID(1.3)
 
      [-p <xyzPeriod>]:
      Default non-periodic in x,y and z dimensions
+     Specifies that SKID take into  account  periodicity  in  all
+     three dimension given by the period <xyzPeriod>.
+
 
 
 
@@ -203,27 +203,17 @@ SKID(1.3)                     SKID                      SKID(1.3)
 
 
 
-     Specifies that SKID take into  account  periodicity  in  all
-     three dimension given by the period <xyzPeriod>. This can be
-     used in place of the above as a shorthand.
-
-     [-px <xPeriod>]: Default non-periodic in x dimension
-     Specifies that SKID take into  account  periodicity  in  the
-     x-dimension given by the period <xPeriod>.
-
-     [-py <yPeriod>] [-pz <zPeriod>]: As above.
-
-     [-c <xyzCenter>]:
-     Default box center is 0.0 in x,y and z dimensions
-     For periodic simulations specifies the center of the box  in
-     all three dimensions. This is a shorthand to the above.
-
      [-cx <xCenter>]: Default box center is 0.0 in x dimension
      Specifies the center of the periodic  box  when  SKID  takes
      into  account  periodicity in the x-dimension. This argument
      can be ignored for a non-periodic simulation.
 
      [-cy <yCenter>] [-cz <zCenter>]: As above.
+
+     [-c <xyzCenter>]:
+     Default box center is 0.0 in x,y and z dimensions
+     For periodic simulations specifies the center of the box  in
+     all three dimensions. This is a shorthand to the above.
 
      [-o <Output Name>]: Default Output Name = "skid".
      This allows the user to specify an alternate  name  for  the
@@ -255,6 +245,16 @@ SKID(1.3)                     SKID                      SKID(1.3)
      circular velocity of the group, <HalfVcirc> is the  circular
      velocity   of   the  group  at  its  half  mass  radius  and
      <OuterVcirc> is the circular velocity at the maximum  radius
+     of  the  group  given  in <OuterR>. <xCenter>, <yCenter> and
+     <zCenter> is the x,y, and z coordinate of the center of  the
+     group.  <xVcm>, <yVcm> and <zVcm> is the x,y and z component
+     to the center of mass velocity of the group.
+
+
+DESCRIPTION
+     SKID finds gravitationally bound groups  in  N-body  simula-
+     tions. The general procedure is first to decide which parti-
+     cles should  be  grouped,  these  are  called  the  "moving"
 
 
 
@@ -269,25 +269,15 @@ SKID(1.3)                     SKID                      SKID(1.3)
 
 
 
-     of  the  group  given  in <OuterR>. <xCenter>, <yCenter> and
-     <zCenter> is the x,y, and z coordinate of the center of  the
-     group.  <xVcm>, <yVcm> and <zVcm> is the x,y and z component
-     to the center of mass velocity of the group.
-
-
-DESCRIPTION
-     SKID finds gravitationally bound groups  in  N-body  simula-
-     tions. The general procedure is first to decide which parti-
-     cles should be grouped, these are called the "moving" parti-
-     cles.   The  particles  considered  may be of a certain type
-     (there are three types in the tipsy format, dark matter, gas
-     and  stars). They may have to satisfy a minimum density cri-
-     terion and may also (in the case of gas) need to  satisfy  a
-     maximum  temperature  criterion. This choice of particles is
-     affected by the type of input file and  the  users  settings
-     for  the  minimum density and maximum temperature. There are
-     seven possible types of tipsy input files and  here  is  how
-     each is handled.
+     particles.   The  particles  considered  may be of a certain
+     type (there are  three  types  in  the  tipsy  format,  dark
+     matter,  gas  and stars). They may have to satisfy a minimum
+     density criterion and may also (in the case of gas) need  to
+     satisfy a maximum temperature criterion. This choice of par-
+     ticles is affected by the type of input file and  the  users
+     settings  for  the  minimum density and maximum temperature.
+     There are seven possible types of tipsy input files and here
+     is how each is handled.
 
      Dark matter only: density and density gradients  are  calcu-
      lated  from  all the particles (dark), and the moving parti-
@@ -321,6 +311,16 @@ DESCRIPTION
      Once the moving particles have  been  found  they  are  then
      moved  along the initial density gradients toward regions of
      higher density.  The particles are  successively  stepped  a
+     distance  of  fConvergeRadius/2.0  in this manner until they
+     stay within a distance  of  fConvergeRadius  over  5  steps.
+     This means that they are oscillating in a local high density
+     region.  We then group all the particles in each  high  den-
+     sity  region  together  using  the friends-of-friends method
+     with a linking length of fLinkLength.  Note that  this  also
+     links  together  high density regions separated by less than
+     fLinkLength. Once all particles are localized in  this  way,
+     we  proceed  to "squish" them together even more to find the
+     high density center. Lastly we discard groups with less than
 
 
 
@@ -335,16 +335,6 @@ SKID(1.3)                     SKID                      SKID(1.3)
 
 
 
-     distance  of  fConvergeRadius/2.0  in this manner until they
-     stay within a distance  of  fConvergeRadius  over  5  steps.
-     This means that they are oscillating in a local high density
-     region.  We then group all the particles in each  high  den-
-     sity  region  together  using  the friends-of-friends method
-     with a linking length of fLinkLength.  Note that  this  also
-     links  together  high density regions separated by less than
-     fLinkLength. Once all particles are localized in  this  way,
-     we  proceed  to "squish" them together even more to find the
-     high density center. Lastly we discard groups with less than
      nMinMembers number of particles.
 
      The next stage (if the user has not  specified  -nu)  is  to
@@ -387,6 +377,16 @@ SKID(1.3)                     SKID                      SKID(1.3)
 
      1. Calculate the potential energies as per case I, step 1.
 
+     1a. Include the potential contribution  of  all  non-grouped
+     mass  within  a  2*fLinkLength  ball about the center of the
+     high density region of the group. In other words we want  to
+     include some of the mass about the density maximum.
+
+     2. Calculate the kinetic energies as per case I, step 2.
+
+     3. The least bound particle is found. If  this  particle  is
+     bound  then  again we are finished with the group. Otherwise
+     we remove it from the group, adjusting the kinetic  energies
 
 
 
@@ -401,16 +401,6 @@ SKID(1.3)                     SKID                      SKID(1.3)
 
 
 
-     1a. Include the potential contribution  of  all  non-grouped
-     mass  within  a  2*fLinkLength  ball about the center of the
-     high density region of the group. In other words we want  to
-     include some of the mass about the density maximum.
-
-     2. Calculate the kinetic energies as per case I, step 2.
-
-     3. The least bound particle is found. If  this  particle  is
-     bound  then  again we are finished with the group. Otherwise
-     we remove it from the group, adjusting the kinetic  energies
      as in case I. Then we go back to step 3. Note that this time
      we do not subtract the potential energy contribution of this
      particle  from  the others in the group. The potential ener-
@@ -452,7 +442,17 @@ OUTPUT FILES
      null. This file can be read in by tipsy and used to  analyze
      the actions of skid.
 
-     skid.den: This ASCII file  is  in  TIPSY  ARRAY  format  and
+     skid.den: This ASCII file is in TIPSY ARRAY format and  con-
+     tains  the density of each particle considered for grouping.
+     Particles not considered for grouping have their density set
+     to 0.
+
+
+EXAMPLES
+     > skid -tau 9e-4 -H 2.8944 -d 170 -p 1 -o dark < dark.bin
+
+     This example  groups  dark  matter  particles  in  the  file
+     dark.bin.  The  simulation is periodic with period length of
 
 
 
@@ -467,16 +467,6 @@ SKID(1.3)                     SKID                      SKID(1.3)
 
 
 
-     contains  the density of each particle considered for group-
-     ing.  Particles not considered for grouping have their  den-
-     sity set to 0.
-
-
-EXAMPLES
-     > skid -tau 9e-4 -H 2.8944 -d 170 -p 1 -o dark < dark.bin
-
-     This example  groups  dark  matter  particles  in  the  file
-     dark.bin.  The  simulation is periodic with period length of
      1.0 in each dimension and box centered on (0,0,0).  The Hub-
      ble  constant  in  system  units  in  this  case  is  2.8944
      (sqrt(8*Pi/3)) and  the  redshift  defaults  to  0  (current
@@ -519,6 +509,16 @@ WARNINGS
      simulations an nSmooth of 32 is acceptable.
 
      3. The unbinding procedure is O(Ngroup^2), this  means  that
+     for very large simulations and specifically situations where
+     groups larger than a couple of thousand  members  are  found
+     the  unbinding  procedure  could be prohibitive. So far this
+     has not been a real problem, even in a 2.1 million  particle
+     simulation, however, future versions of skid may need to use
+     a tree code for the group potential energies. (The  friends-
+     of-friends is actually also O(Ngroup^2) but this is not such
+     a big problem)
+
+
 
 
 
@@ -533,22 +533,22 @@ SKID(1.3)                     SKID                      SKID(1.3)
 
 
 
-     for very large simulations and specifically situations where
-     groups larger than a couple of thousand  members  are  found
-     the  unbinding  procedure  could be prohibitive. So far this
-     has not been a real problem, even in a 2.1 million  particle
-     simulation, however, future versions of skid may need to use
-     a tree code for the group potential energies. (The  friends-
-     of-friends is actually also O(Ngroup^2) but this is not such
-     a big problem)
-
-
 BUGS
      Please report any!
 
 
 SEE ALSO
      tipsy(1), smooth(1), fof(1)
+
+
+
+
+
+
+
+
+
+
 
 
 
