@@ -1317,17 +1317,22 @@ void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark)
 			assert(kd->piGroup[q[iBig].iOrder] == iGroup);
 			kd->piGroup[q[iBig].iOrder] = 0;
 			--kd->pGroup[iGroup].nMembers;
+			--n;
 			++kd->pGroup[0].nMembers;
+			++nUnbind;
 			/*
-			 ** Adjust rcm and vcm.
+			 ** Adjust rcm and vcm, unless all the particles have been unbound.
 			 */
+			if (n == 0) {
+				dMass = 0.0;
+				for (j=0;j<3;++j) vcm[j] = 0.0;
+				break;
+				}
 			dMass -= q[iBig].fMass;
 			for (j=0;j<3;++j) {
 				rcm[j] += q[iBig].fMass/dMass*(rcm[j]-q[iBig].r[j]);
 				vcm[j] += q[iBig].fMass/dMass*(vcm[j]-q[iBig].v[j]);
 				}
-			++nUnbind;
-			--n;
 			/*
 			 ** Swap particle iBig and last, swap also corresp. potential E.
 			 */
