@@ -1043,8 +1043,8 @@ void kdReadCenter(KD kd,char *pszGtp)
 		 ** agrees with that which we set before in kdInGroup!
 		 */
 		if (h.nstar != kd->nGroup-1) {
-			fprintf(stderr,"ERROR: grp and gtp files don't
-match: %d vs. %d.\n", h.nstar, kd->nGroup-1);
+			fprintf(stderr,"ERROR: grp and gtp files don't match: %d vs. %d.\n",
+				h.nstar, kd->nGroup-1);
 			exit(1);
 			}
 		/*
@@ -1593,6 +1593,8 @@ void kdOutStats(KD kd,char *pszFile, float fDensMin, float fTempMax)
 	float fVcirc;
 	float flVcirc;
 	float fmVcirc;
+	float fRVmax;
+	float fRhmass;
 
 	if (kd->bOutDiag) puts(">> kdOutStats()");
 	fflush(stdout);
@@ -1652,21 +1654,38 @@ void kdOutStats(KD kd,char *pszFile, float fDensMin, float fTempMax)
 	    fmVcirc = 0.0;
 	    for(j = 0; j < n; j++) {
 			fTotMass += q[j].fMass;
-			if(kd->G*fTotMass/sqrt(q[j].fBall2) > fVcirc)
-				fVcirc = kd->G*fTotMass/sqrt(q[j].fBall2);
+			if(q[j].fBall2 > 4.0*q[j].fSoft*q[j].fSoft
+			   && kd->G*fTotMass/sqrt(q[j].fBall2) > fVcirc) {
+				fRVmax = sqrt(q[j].fBall2);
+				fVcirc = kd->G*fTotMass/fRVmax;
+				}
 			if (kdParticleType(kd,q[j].iOrder) == GAS &&
 				q[j].fDensity >= fDensMin && q[j].fTemp <= fTempMax)
 				fGasMass += q[j].fMass;
 			if (kdParticleType(kd,q[j].iOrder) == STAR)
 				fStarMass += q[j].fMass;
 			if (fTotMass > fHalfMass && fmVcirc == 0.0) {
-				fmVcirc = kd->G*fTotMass/sqrt(q[j].fBall2); 
+				fRhmass = sqrt(q[j].fBall2);
+				fmVcirc = kd->G*fTotMass/fRhmass; 
 				}
 			}
 	    flVcirc = kd->G*fTotMass/sqrt(q[n-1].fBall2);
-	    fprintf(fp, "%d %d %g %g %g %g %g %g %g %g %g %g %g %g %g\n",iGroup,n,
+	    if(fVcirc == 0.0) {
+		fVcirc = flVcirc;
+		fRVmax = sqrt(q[n-1].fBall2);
+		}
+/*
+ * Things to print out:
+ * 1: group id, 2: number of particles, 3: total mass, 4: gas mass,
+ * 5: star mass, 6: maximum circular velocity, 7: 1/2 mass circular velocity
+ * 8: outer circular velocity, 9: radius of max circular velocity,
+ * 10: 1/2 mass radius, 11: outer radius, 12-14: center, 15-17: CM velocity.
+ */
+	    fprintf(fp, "%d %d %g %g %g %g %g %g %g %g %g %g %g %g %g %g %g\n",
+		    		iGroup,n,
 				fTotMass, fGasMass, fStarMass, sqrt(fVcirc),
-				sqrt(fmVcirc), sqrt(flVcirc), sqrt(q[n-1].fBall2),
+				sqrt(fmVcirc), sqrt(flVcirc),
+		    		fRVmax, fRhmass, sqrt(q[n-1].fBall2),
 				kd->pGroup[iGroup].rCenter[0],
 				kd->pGroup[iGroup].rCenter[1],
 				kd->pGroup[iGroup].rCenter[2], 
