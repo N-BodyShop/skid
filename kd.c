@@ -811,8 +811,16 @@ void kdFoF(KD kd,float fTau)
 
 	if (kd->bOutDiag) puts(">> kdFoF()");
 	fflush(stdout);
-    kd->nActive = kd->nMove;
-	if (kd->nActive == 0) return;
+	kd->nActive = kd->nMove;
+	if (kd->nActive == 0) {
+	    kd->nGroup = 1;
+	    kd->piGroup = (int *)malloc(kd->nParticles*sizeof(int));
+	    assert(kd->piGroup);
+	    for (pi=0;pi<kd->nParticles;++pi) {
+		    kd->piGroup[pi] = 0;
+		    }
+	    return;
+	    }
 	kdBuildMoveTree(kd);
 	p = kd->pMove;
 	c = kd->kdNodes;
