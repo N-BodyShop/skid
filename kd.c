@@ -539,7 +539,7 @@ int ScatterCriterion(KD kd,int pi,int bGasAndDark)
 	}
 
 
-void kdInitMove(KD kd,float fDensMin,float fTempMax,float fMassMax,
+int kdInitMove(KD kd,float fDensMin,float fTempMax,float fMassMax,
 				float fCvg,int bGasAndDark)
 {
 	int pi,nCnt,j;
@@ -554,8 +554,6 @@ void kdInitMove(KD kd,float fDensMin,float fTempMax,float fMassMax,
 								  fMassMax,bGasAndDark);
 		}
 	kd->nActive = kd->nMove;
-	printf("Number of Moving particles:%d\n",kd->nMove);
-	fflush(stdout);
 	/*
 	 ** Allocate moving particles and initialize.
 	 */
@@ -580,6 +578,7 @@ void kdInitMove(KD kd,float fDensMin,float fTempMax,float fMassMax,
 	for (pi=0;pi<kd->nParticles;++pi) {
 		if (kd->pInit[pi].fBall2 < fCvg2) kd->pInit[pi].fBall2 = fCvg2;
 		}
+	return(kd->nActive);
 	}
 
 
@@ -606,28 +605,9 @@ int kdScatterActive(KD kd,int bGasAndDark)
 	}
 
 
-int kdScatterCut(KD kd)
-{
-	PINIT *p,t;
-	int i,j;
-	
-	if(kd->inType == DARK) {
-		p = kd->pInit;
-		i = 0;
-		j = kd->nInitActive-1;
-		while (1) {
-			while (p[i].fDensity > 0.0)
-				if (++i > j) goto done;
-			while (p[j].fDensity < 0.0)
-				if (i > --j) goto done;
-			t = p[i];
-			p[i] = p[j];
-			p[j] = t;
-			}
-	done:
-		kd->nInitActive = i;
-		}
-	return(kd->nInitActive);
+int bAllowInitialCut(KD kd) {
+	if (kd->inType == DARK) return(1);
+	else return(0);
 	}
 
 

@@ -34,6 +34,8 @@ typedef struct smContext {
 	PQ *pq;
 	PQ *pqHead;
 	char *iMark;
+	int nExtraScat;
+	PINIT *pp;
 	} * SMX;
 
 
@@ -93,8 +95,8 @@ int smInit(SMX *,KD,int);
 void smFinish(SMX);
 void smBallSearch(SMX,float,float *);
 int  smBallGather(SMX,float,float *,NN *);
-void smDensityInit(SMX);
-void smAccDensity(SMX);
+void smDensityInit(SMX,int);
+int smAccDensity(SMX,int);
 
 #endif
 

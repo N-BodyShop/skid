@@ -23,12 +23,11 @@ void usage(void)
 	fprintf(stderr,"     [-s <nSmooth>] [-d <fMinDensity>] [-t <fMaxTemp>]\n");
 	fprintf(stderr,"     [-cvg <fConvergeRadius>] [-scoop <fScoopRadius>]\n");
 	fprintf(stderr,"     [-m <nMinMembers>] [-nu] [-gd] [-unbind <GroupName>[.grp]]\n");
-	fprintf(stderr,"     [-M <fMaxMass>]\n");
+	fprintf(stderr,"     [-M <fMaxMass>] [-fic]\n");
 	fprintf(stderr,"GRAVITATIONAL SOFTENING arguments:\n");
 	fprintf(stderr,"     [-spline] [-plummer] [-e <fSoft>]\n"); 
 	fprintf(stderr,"PERIODIC BOX specification:\n");
 	fprintf(stderr,"     [-p <xyzPeriod>]\n");
-	fprintf(stderr,"     [-px <xPeriod>] [-py <yPeriod>] [-pz <zPeriod>]\n");
 	fprintf(stderr,"     [-c <xyzCenter>]\n");
 	fprintf(stderr,"     [-cx <xCenter>] [-cy <yCenter>] [-cz <zCenter>]\n");
 	fprintf(stderr,"OUTPUT arguments:\n");
@@ -45,7 +44,8 @@ void main(int argc,char **argv)
 	 ** Input argument variables and control.
 	 */
 	int bTau,bCvg,bScoop,nSmooth,nMembers,bNoUnbind,bUnbindOnly,iSoftType;
-	int bEps,bOutRay,bOutDens,bGasAndDark,bOutStats;
+	int bEps,bOutRay,bOutDens,bGasAndDark,bOutStats,bForceInitialCut;
+	int bPeriodic;
 	float fTau,z,Omega0,G,H0,fDensMin,fTempMax,fMassMax,fCvg,fScoop,fEps;
 	float fPeriod[3],fCenter[3];
 	char achGroup[256],achName[256];
@@ -61,6 +61,7 @@ void main(int argc,char **argv)
 	int sec5,usec5;
 	char achFile[256];
 	int iExt;
+	int nScat;
 
 	printf("SKID v1.3: Joachim Stadel, Jan. 1996\n");
 	/*
@@ -91,6 +92,8 @@ void main(int argc,char **argv)
 	bNoUnbind = 0;
 	bGasAndDark = 0;
 	bUnbindOnly = 0;
+	bForceInitialCut = 0;
+	bPeriodic = 0;
 	/*
 	 ** Default gravitational parameters.
 	 */
@@ -170,6 +173,10 @@ void main(int argc,char **argv)
 			fMassMax = atof(argv[i]);
 			++i;
 			}
+		else if (!strcmp(argv[i],"-fic")) {
+			bForceInitialCut = 1;
+			++i;
+			}
 		else if (!strcmp(argv[i],"-cvg")) {
 			++i;
 			if (i >= argc) usage();
@@ -226,24 +233,7 @@ void main(int argc,char **argv)
 			fPeriod[0] = atof(argv[i]);
 			fPeriod[1] = atof(argv[i]);
 			fPeriod[2] = atof(argv[i]);
-			++i;
-			}
-		else if (!strcmp(argv[i],"-px")) {
-			++i;
-			if (i >= argc) usage();
-			fPeriod[0] = atof(argv[i]);
-			++i;
-			}
-		else if (!strcmp(argv[i],"-py")) {
-			++i;
-			if (i >= argc) usage();
-			fPeriod[1] = atof(argv[i]);
-			++i;
-			}
-		else if (!strcmp(argv[i],"-pz")) {
-			++i;
-			if (i >= argc) usage();
-		    fPeriod[2] = atof(argv[i]);
+			bPeriodic = 1;
 			++i;
 			}
 		else if (!strcmp(argv[i],"-c")) {
@@ -334,7 +324,7 @@ void main(int argc,char **argv)
 	kdBuildTree(kd);
 	smInit(&smx,kd,nSmooth);
 	kdTime(kd,&sec1,&usec1);
-	smDensityInit(smx);
+	smDensityInit(smx,bPeriodic);
 	kdTime(kd,&sec1,&usec1);
 	/*
 	 ** Output density if requested.
@@ -350,24 +340,29 @@ void main(int argc,char **argv)
 	 ** number of scatterers if possible.
 	 */
 	kdTime(kd,&sec2,&usec2);
-	kdInitMove(kd,fDensMin,fTempMax,fMassMax,fCvg,bGasAndDark);
+	nActive = kdInitMove(kd,fDensMin,fTempMax,fMassMax,fCvg,bGasAndDark);
 	kdBuildMoveTree(kd);
-	smAccDensity(smx);
+	if (bAllowInitialCut(kd) || bForceInitialCut) { 
+		nScat = smAccDensity(smx,1);
+		}
+	else {
+		nScat = smAccDensity(smx,0);
+		}
+	printf("Ittr:%d nActive:%d nScatter:%d\n",0,nActive,nScat);
+	fflush(stdout);
 	kdMoveParticles(kd,fStep);
-	kdScatterCut(kd);
 	/*
 	 ** Do the main "flow" loop for the moving particles.
 	 */
-	nIttr = 0;
-	nActive = 1;
+	nIttr = 1;
 	while (nActive) {
 		for (i=0;i<PRUNE_STEPS;++i) {
 			kdBuildMoveTree(kd);
-			smAccDensity(smx);
+			nScat = smAccDensity(smx,0);
 			kdMoveParticles(kd,fStep);
 			}
 		nActive = kdPruneInactive(kd,fCvg);
-		printf("Ittr:%d nActive:%d\n",nIttr,nActive);
+		printf("Ittr:%d nActive:%d nScatter:%d\n",nIttr,nActive,nScat);
 		fflush(stdout);
 		++nIttr;
 		}
@@ -385,8 +380,10 @@ void main(int argc,char **argv)
 	kdReactivateMove(kd);
 	for (i=0;i<PRUNE_STEPS;++i) {
 		kdBuildMoveTree(kd);
-		smAccDensity(smx);
+		nScat = smAccDensity(smx,0);
 		kdMoveParticles(kd,MICRO_STEP*fStep);
+		printf("Microstep:%d nScatter:%d\n",i+1,nScat);
+		fflush(stdout);
 		}
 	kdTime(kd,&sec5,&usec5);
 	smFinish(smx);
