@@ -1296,7 +1296,8 @@ void kdTooSmall(KD kd,int nMembers)
 /*
  ** This function maintains STRICT group order!
  */
-void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark,int bNoUnbind)
+void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark,int bNoUnbind,
+	      int nMaxMembers)
 {
 	PINIT *q,t;
 	int iGroup,n,i,j,iBig,iMin,pi;
@@ -1326,6 +1327,8 @@ void kdUnbind(KD kd,int iSoftType,float fScoop,int bGasAndDark,int bNoUnbind)
 	fflush(stdout);
 	for (iGroup=1;iGroup<kd->nGroup;++iGroup) {
 		n = kd->pGroup[iGroup].nMembers;
+		if(n >= nMaxMembers)
+			continue; /* too big (and expensive) to unbind */
 		/*
 		 ** Make temporary particles to hold new positions
 		 */

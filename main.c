@@ -27,7 +27,7 @@ void usage(void)
 	fprintf(stderr,"     [-s <nSmooth>] [-d <fMinDensity>] [-t <fMaxTemp>]\n");
 	fprintf(stderr,"     [-cvg <fConvergeRadius>] [-scoop <fScoopRadius>]\n");
 	fprintf(stderr,"     [-m <nMinMembers>] [-nu] [-gd] [-unbind <GroupName>[.grp]]\n");
-	fprintf(stderr,"     [-M <fMaxMass>] [-fic] [-go]\n");
+	fprintf(stderr,"     [-M <fMaxMass>] [-fic] [-go] [-maxgroup nMaxMembers]\n");
 	fprintf(stderr,"GRAVITATIONAL SOFTENING arguments:\n");
 	fprintf(stderr,"     [-spline] [-plummer] [-e <fSoft>]\n"); 
 	fprintf(stderr,"PERIODIC BOX specification:\n");
@@ -49,6 +49,7 @@ int main(int argc,char **argv)
 	 */
 	int bTau,bCvg,bScoop,nSmooth,nMembers,bNoUnbind,bUnbindOnly,iSoftType;
 	int bEps,bOutRay,bOutDens,bGasAndDark,bGasOnly,bOutStats,bForceInitialCut;
+	int nMaxMembers;
 	int bPeriodic;
 	int bStandard;
 	float fTau,z,Omega0,G,H0,fDensMin,fTempMax,fMassMax,fCvg,fScoop,fEps;
@@ -105,6 +106,7 @@ int main(int argc,char **argv)
 	bCvg = 0;
 	bScoop = 0;
 	nMembers = 8;
+	nMaxMembers = INT_MAX;
 	bNoUnbind = 0;
 	bGasAndDark = 0;
 	bGasOnly = 0;
@@ -225,6 +227,12 @@ int main(int argc,char **argv)
 			++i;
 			if (i >= argc) usage();
 			nMembers = atoi(argv[i]);
+			++i;
+			}
+		else if (!strcmp(argv[i],"-maxgroup")) {
+			++i;
+			if (i >= argc) usage();
+			nMaxMembers = atoi(argv[i]);
 			++i;
 			}
 		else if (!strcmp(argv[i],"-nu")) {
@@ -457,7 +465,7 @@ int main(int argc,char **argv)
 	 ** Do the unbinding of particles.
 	 */
 	kdTime(kd,&sec4,&usec4);
-	kdUnbind(kd,iSoftType,fScoop,bGasAndDark,bNoUnbind);
+	kdUnbind(kd,iSoftType,fScoop,bGasAndDark,bNoUnbind,nMaxMembers);
 	kdTime(kd,&sec4,&usec4);
 	kdTooSmall(kd,nMembers);
 	/*
