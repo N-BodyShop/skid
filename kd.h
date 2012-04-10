@@ -63,8 +63,8 @@ typedef struct kdNode {
 	float fSplit;
 	BND bnd;
 	int iDim;
-	int pLower;
-	int pUpper;
+	long pLower;
+	long pUpper;
 	} KDN;
 
 
