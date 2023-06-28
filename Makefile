@@ -8,8 +8,9 @@ CC=cc
 #CFLAGS	=	-O2
 #Following added for gcc
 #CFLAGS = -O3 -funroll-loops
-CFLAGS = -O3
-LIBS	=   -lm
+# tirpc library added to work for recent Linux distributions.
+CFLAGS = -O3 -I/usr/include/tirpc
+LIBS	=   -lm -ltirpc
 
 default:	skid totipnat
 	@echo To try the demo, type demo!
